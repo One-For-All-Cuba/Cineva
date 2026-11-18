@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+.env
+.venv/
+venv/
+caddy-config/
+caddy-data/
+*.log
+.DS_Store
+cineva-data/
+packages/
