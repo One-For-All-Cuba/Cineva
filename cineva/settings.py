@@ -107,5 +107,4 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 QVAPAY_APP_ID = os.environ.get("QVAPAY_APP_ID", "")
 QVAPAY_APP_SECRET = os.environ.get("QVAPAY_APP_SECRET", "")
-TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
-CINEVA_VERSION = "0.9.1"
+CINEVA_VERSION = "0.9.2"

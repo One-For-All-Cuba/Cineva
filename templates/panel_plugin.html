@@ -3,26 +3,41 @@
 {% block content %}
 <div class="wrap panel-wrap">
   <p><a href="/panel/" style="color:var(--muted)">← Panel</a></p>
-  <h1 class="page-title">{{ plugin.name }}</h1>
-  <form method="post" class="plugin-form">
-    {% csrf_token %}
-    <label class="check-row">
-      <input type="checkbox" name="enabled" {% if plugin.enabled %}checked{% endif %}>
-      Activar proveedor
-    </label>
-    <label>Nombre
-      <input type="text" name="name" value="{{ plugin.name }}">
-    </label>
-    <label>Descripción
-      <textarea name="description" rows="2">{{ plugin.description }}</textarea>
-    </label>
-    <label>URL embed (usa {id} y opcional {type})
-      <input type="text" name="embed_url" value="{{ plugin.embed_url }}" placeholder="https://…/{id}">
-    </label>
-    <label>Prioridad (menor = primero)
-      <input type="text" name="priority" value="{{ plugin.priority }}">
-    </label>
-    <button type="submit" class="btn btn-primary">Guardar</button>
-  </form>
+  <div class="panel-card">
+    <div class="panel-card-head">
+      <h1 class="page-title" style="margin:0">{{ plugin.name }}</h1>
+      <span class="tag {% if plugin.enabled %}on{% else %}off{% endif %}">{% if plugin.enabled %}Activo{% else %}Off{% endif %}</span>
+    </div>
+    <form method="post" class="plugin-form">
+      {% csrf_token %}
+      <label class="check-row">
+        <input type="checkbox" name="enabled" {% if plugin.enabled %}checked{% endif %}>
+        Activar este proveedor
+      </label>
+      <label>Nombre
+        <input type="text" name="name" value="{{ plugin.name }}">
+      </label>
+      <label>Descripción
+        <textarea name="description" rows="2">{{ plugin.description }}</textarea>
+      </label>
+      <label>URL de catálogo JSON (si se rellena y está activo, sustituye el demo)
+        <input type="url" name="catalog_url" value="{{ plugin.catalog_url }}" placeholder="https://tu-api.ejemplo/catalog.json">
+      </label>
+      <label>URL embed video ({id} {type} {slug})
+        <input type="text" name="embed_url" value="{{ plugin.embed_url }}" placeholder="https://…/{id}">
+      </label>
+      <label>URL tráiler ({trailer_key})
+        <input type="text" name="trailer_url" value="{{ plugin.trailer_url }}" placeholder="https://www.youtube.com/embed/{trailer_key}">
+      </label>
+      <label>Prioridad (menor = primero)
+        <input type="number" name="priority" value="{{ plugin.priority }}">
+      </label>
+      <div class="note">
+        Formato catálogo esperado:<br>
+        <code>{"movies":[{"id":1,"title":"…","poster":"…","year":"2024","overview":"…"}], "series":[], "anime":[], "trending":[]}</code>
+      </div>
+      <button type="submit" class="btn btn-primary">Guardar proveedor</button>
+    </form>
+  </div>
 </div>
 {% endblock %}

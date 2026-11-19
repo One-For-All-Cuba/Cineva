@@ -11,13 +11,12 @@
     <div class="meta-row">
       {% if hero.vote %}<span class="score">{{ hero.vote|floatformat:1 }}/10</span>{% endif %}
       {% if hero.year %}<span>{{ hero.year }}</span>{% endif %}
-      {% if hero.runtime %}<span>{{ hero.runtime }} min</span>{% elif hero.seasons %}<span>{{ hero.seasons }} temp.</span>{% endif %}
       <span class="hd">{{ hero.quality|default:"HD" }}</span>
     </div>
-    <p class="hero-plot">{{ hero.overview|truncatewords:40 }}</p>
+    <p class="hero-plot">{{ hero.overview|truncatewords:36 }}</p>
     <div class="hero-actions">
       <a class="btn btn-primary" href="{% if hero.media_type == 'movie' %}/movie/{{ hero.id }}/{% else %}/tv/{{ hero.id }}/{% endif %}">▶ Ver ficha</a>
-      <a class="btn btn-ghost" href="/watch/{{ hero.media_type }}/{{ hero.id }}/">Vista previa</a>
+      <a class="btn btn-ghost" href="/watch/{{ hero.media_type|default:'movie' }}/{{ hero.id }}/">Reproducir</a>
     </div>
   </div>
 </section>
@@ -26,77 +25,94 @@
 <div class="wrap">
   {% if genres %}
   <div class="genre-row">
-    {% for g in genres %}
-    <a href="/search/?genero={{ g|urlencode }}">{{ g }}</a>
-    {% endfor %}
+    {% for g in genres %}<a href="/search/?genero={{ g|urlencode }}">{{ g }}</a>{% endfor %}
   </div>
   {% endif %}
 
-  <div class="layout-catalog">
-    <div>
-      {% if movies %}
-      <div class="section-head"><h2>Películas online</h2><a class="btn btn-primary" href="/peliculas/">Más películas</a></div>
-      <div class="rail">
-        {% for r in movies %}
-        <a class="poster-card rail-item" href="/movie/{{ r.id }}/">
-          <div class="thumb">
-            <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
-            <div class="play"><span>▶</span></div>
-            {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
-          </div>
-          <div class="cap">{{ r.title }}</div>
-        </a>
-        {% endfor %}
+  {% if movies %}
+  <div class="carousel-block">
+    <div class="section-head">
+      <h2>Películas online</h2>
+      <div class="carousel-controls">
+        <button type="button" class="carousel-btn" data-target="car-movies" data-dir="-1" aria-label="Anterior">‹</button>
+        <button type="button" class="carousel-btn" data-target="car-movies" data-dir="1" aria-label="Siguiente">›</button>
+        <a class="btn btn-primary" href="/peliculas/">Más</a>
       </div>
-      {% endif %}
-
-      {% if series %}
-      <div class="section-head"><h2>Series online</h2><a class="btn btn-primary" href="/series/">Más series</a></div>
-      <div class="rail">
-        {% for r in series %}
-        <a class="poster-card rail-item" href="/tv/{{ r.id }}/">
-          <div class="thumb">
-            <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
-            <div class="play"><span>▶</span></div>
-            {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
-          </div>
-          <div class="cap">{{ r.title }}</div>
-        </a>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      {% if anime %}
-      <div class="section-head"><h2>Anime</h2><a class="btn btn-primary" href="/anime/">Más anime</a></div>
-      <div class="rail">
-        {% for r in anime %}
-        <a class="poster-card rail-item" href="/tv/{{ r.id }}/">
-          <div class="thumb">
-            <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
-            <div class="play"><span>▶</span></div>
-            {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
-          </div>
-          <div class="cap">{{ r.title }}</div>
-        </a>
-        {% endfor %}
-      </div>
-      {% endif %}
     </div>
-
-    <aside>
-      <div class="sidebar-card">
-        <h3>Populares</h3>
-        {% for r in popular %}
-        <a class="pop-row" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}">
-          <img src="{{ r.poster }}" alt="">
-          <div>
-            <div class="t">{{ r.title }}</div>
-            <div class="m">{% if r.vote %}{{ r.vote|floatformat:1 }}/10 · {% endif %}{{ r.year }} · <span class="hd" style="font-size:.65rem">HD</span></div>
-          </div>
-        </a>
-        {% endfor %}
-      </div>
-    </aside>
+    <div class="carousel" id="car-movies">
+      {% for r in movies %}
+      <a class="poster-card rail-item" href="/movie/{{ r.id }}/">
+        <div class="thumb">
+          <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
+          <div class="play"><span>▶</span></div>
+          {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
+        </div>
+        <div class="cap">{{ r.title }}</div>
+      </a>
+      {% endfor %}
+    </div>
   </div>
+  {% endif %}
+
+  {% if series %}
+  <div class="carousel-block">
+    <div class="section-head">
+      <h2>Series online</h2>
+      <div class="carousel-controls">
+        <button type="button" class="carousel-btn" data-target="car-series" data-dir="-1" aria-label="Anterior">‹</button>
+        <button type="button" class="carousel-btn" data-target="car-series" data-dir="1" aria-label="Siguiente">›</button>
+        <a class="btn btn-primary" href="/series/">Más</a>
+      </div>
+    </div>
+    <div class="carousel" id="car-series">
+      {% for r in series %}
+      <a class="poster-card rail-item" href="/tv/{{ r.id }}/">
+        <div class="thumb">
+          <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
+          <div class="play"><span>▶</span></div>
+          {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
+        </div>
+        <div class="cap">{{ r.title }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if anime %}
+  <div class="carousel-block">
+    <div class="section-head">
+      <h2>Anime</h2>
+      <div class="carousel-controls">
+        <button type="button" class="carousel-btn" data-target="car-anime" data-dir="-1" aria-label="Anterior">‹</button>
+        <button type="button" class="carousel-btn" data-target="car-anime" data-dir="1" aria-label="Siguiente">›</button>
+        <a class="btn btn-primary" href="/anime/">Más</a>
+      </div>
+    </div>
+    <div class="carousel" id="car-anime">
+      {% for r in anime %}
+      <a class="poster-card rail-item" href="/tv/{{ r.id }}/">
+        <div class="thumb">
+          <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
+          <div class="play"><span>▶</span></div>
+          {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
+        </div>
+        <div class="cap">{{ r.title }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
+
+<script>
+document.querySelectorAll('.carousel-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var el = document.getElementById(btn.getAttribute('data-target'));
+    if(!el) return;
+    var dir = parseInt(btn.getAttribute('data-dir'), 10) || 1;
+    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.75, 480), behavior: 'smooth' });
+  });
+});
+</script>
 {% endblock %}

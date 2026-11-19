@@ -1,55 +1,70 @@
 {% extends "base.html" %}
-{% block title %}Administrar sitio{% endblock %}
+{% block title %}Panel de administración{% endblock %}
 {% block content %}
 <div class="wrap panel-wrap">
-  <h1 class="page-title">Administrar sitio</h1>
-  <p class="count-line">Configuración integrada + proveedores de video (plugins)</p>
-
-  <section class="panel-section">
-    <h2>Configuración integrada</h2>
-    <form method="post" class="plugin-form">
-      {% csrf_token %}
-      <input type="hidden" name="section" value="config">
-      <label>Título del sitio
-        <input type="text" name="site_title" value="{{ cfg.site_title }}">
-      </label>
-      <label>TMDB API Key
-        <input type="text" name="tmdb_api_key" value="{{ cfg.tmdb_api_key }}" autocomplete="off">
-      </label>
-      <label>Google Client ID
-        <input type="text" name="google_client_id" value="{{ cfg.google_client_id }}" autocomplete="off">
-      </label>
-      <label>Google Client Secret
-        <input type="password" name="google_client_secret" value="{{ cfg.google_client_secret }}" autocomplete="off">
-      </label>
-      <label>QvaPay App ID
-        <input type="text" name="qvapay_app_id" value="{{ cfg.qvapay_app_id }}" autocomplete="off">
-      </label>
-      <label>QvaPay App Secret
-        <input type="password" name="qvapay_app_secret" value="{{ cfg.qvapay_app_secret }}" autocomplete="off">
-      </label>
-      <div class="note">Redirect Google: <code>{{ google_redirect }}</code></div>
-      <button type="submit" class="btn btn-primary">Guardar configuración</button>
-    </form>
-  </section>
-
-  <section class="panel-section">
-    <h2>Proveedores de video (plugins)</h2>
-    <p class="count-line">Solo embeds / reproducción. Activa y ordena por prioridad.</p>
-    <div class="panel-grid">
-      {% for p in providers %}
-      <a class="plugin-card" href="/panel/plugin/{{ p.key }}/">
-        <div class="plugin-top">
-          <strong>{{ p.name }}</strong>
-          <span class="tag {% if p.enabled %}on{% else %}off{% endif %}">{% if p.enabled %}Activo{% else %}Inactivo{% endif %}</span>
-        </div>
-        <div class="plugin-kind">prioridad {{ p.priority }} · <code>{{ p.key }}</code></div>
-        <p>{{ p.description|truncatewords:20 }}</p>
-      </a>
-      {% empty %}
-      <p class="empty">No hay proveedores. Ejecuta migraciones.</p>
-      {% endfor %}
+  <header class="panel-hero">
+    <div>
+      <h1 class="page-title">Panel de administración</h1>
+      <p class="count-line">Catálogo activo: <strong>{{ catalog_source }}</strong> · v{{ version }}</p>
     </div>
-  </section>
+    <a class="btn btn-ghost" href="/admin/">Django Admin</a>
+  </header>
+
+  <div class="panel-layout">
+    <section class="panel-card">
+      <div class="panel-card-head">
+        <h2>Configuración del sitio</h2>
+        <span class="tag on">Integrada</span>
+      </div>
+      <p class="panel-lead">Google OAuth, QvaPay y título. No usa plugins.</p>
+      <form method="post" class="plugin-form">
+        {% csrf_token %}
+        <input type="hidden" name="section" value="config">
+        <div class="form-grid">
+          <label>Título del sitio
+            <input type="text" name="site_title" value="{{ cfg.site_title }}">
+          </label>
+          <label>Google Client ID
+            <input type="text" name="google_client_id" value="{{ cfg.google_client_id }}" autocomplete="off">
+          </label>
+          <label>Google Client Secret
+            <input type="password" name="google_client_secret" value="{{ cfg.google_client_secret }}" autocomplete="off">
+          </label>
+          <label>QvaPay App ID
+            <input type="text" name="qvapay_app_id" value="{{ cfg.qvapay_app_id }}" autocomplete="off">
+          </label>
+          <label>QvaPay App Secret
+            <input type="password" name="qvapay_app_secret" value="{{ cfg.qvapay_app_secret }}" autocomplete="off">
+          </label>
+        </div>
+        <div class="note">Redirect Google: <code>{{ google_redirect }}</code></div>
+        <button type="submit" class="btn btn-primary">Guardar configuración</button>
+      </form>
+    </section>
+
+    <section class="panel-card">
+      <div class="panel-card-head">
+        <h2>Proveedores</h2>
+        <span class="tag">Plugins</span>
+      </div>
+      <p class="panel-lead">Si un proveedor tiene <strong>catalog_url</strong> y está activo, el sitio usa ese catálogo (no demo). Embed y tráiler son opcionales.</p>
+      <div class="panel-grid">
+        {% for p in providers %}
+        <a class="plugin-card" href="/panel/plugin/{{ p.key }}/">
+          <div class="plugin-top">
+            <strong>{{ p.name }}</strong>
+            <span class="tag {% if p.enabled %}on{% else %}off{% endif %}">{% if p.enabled %}Activo{% else %}Off{% endif %}</span>
+          </div>
+          <div class="plugin-kind">prioridad {{ p.priority }} · <code>{{ p.key }}</code></div>
+          <p>{{ p.description|truncatewords:22 }}</p>
+          {% if p.catalog_url %}<div class="plugin-meta">Catálogo configurado</div>{% endif %}
+          {% if p.embed_url %}<div class="plugin-meta">Embed configurado</div>{% endif %}
+        </a>
+        {% empty %}
+        <p class="empty">Sin proveedores. Reinicia o ejecuta bootstrap.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock %}

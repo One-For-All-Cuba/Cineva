@@ -1,4 +1,4 @@
-"""Admin por defecto, Site, config y proveedores de video."""
+"""Admin por defecto, Site, config y proveedores."""
 from __future__ import annotations
 
 import logging
@@ -8,20 +8,28 @@ log = logging.getLogger(__name__)
 
 DEFAULT_PROVIDERS = [
     {
-        "key": "embed_generic",
-        "name": "Embed genérico",
-        "description": "Iframe genérico. Usa embed_url con {id}.",
+        "key": "custom_json",
+        "name": "API JSON propia",
+        "description": (
+            "Catálogo desde tu endpoint HTTPS. "
+            "JSON: {movies:[], series:[], anime:[], trending:[]}. "
+            "Cada ítem: id, title, poster, overview, year, media_type, trailer_key opcional."
+        ),
         "enabled": False,
+        "catalog_url": "",
         "embed_url": "",
+        "trailer_url": "https://www.youtube.com/embed/{trailer_key}",
         "priority": 10,
     },
     {
         "key": "youtube_trailer",
-        "name": "YouTube tráiler",
-        "description": "Solo tráilers oficiales cuando hay key de YouTube en el ítem.",
+        "name": "YouTube tráilers",
+        "description": "Reproduce tráilers oficiales cuando el ítem trae trailer_key.",
         "enabled": True,
-        "embed_url": "https://www.youtube.com/embed/{id}",
-        "priority": 20,
+        "catalog_url": "",
+        "embed_url": "",
+        "trailer_url": "https://www.youtube.com/embed/{trailer_key}",
+        "priority": 50,
     },
 ]
 
@@ -46,23 +54,15 @@ def ensure_defaults() -> None:
             User.objects.create_superuser("admin", "admin@cineva.local", "admin")
         else:
             u = User.objects.get(username="admin")
-            changed = False
-            if not u.is_superuser:
+            if not u.is_superuser or not u.is_staff:
                 u.is_superuser = True
-                changed = True
-            if not u.is_staff:
                 u.is_staff = True
-                changed = True
-            if changed:
                 u.save()
     except Exception as e:
         log.debug("Admin: %s", e)
 
     cfg = SiteConfig.get()
     changed = False
-    if not cfg.tmdb_api_key and os.environ.get("TMDB_API_KEY"):
-        cfg.tmdb_api_key = os.environ["TMDB_API_KEY"]
-        changed = True
     if not cfg.google_client_id and os.environ.get("GOOGLE_CLIENT_ID"):
         cfg.google_client_id = os.environ["GOOGLE_CLIENT_ID"]
         changed = True
@@ -82,16 +82,21 @@ def ensure_defaults() -> None:
         _ensure_google_socialapp(cfg.google_client_id, cfg.google_client_secret)
 
     for p in DEFAULT_PROVIDERS:
-        ProviderPlugin.objects.get_or_create(
+        obj, created = ProviderPlugin.objects.get_or_create(
             key=p["key"],
             defaults={
                 "name": p["name"],
                 "description": p["description"],
                 "enabled": p["enabled"],
-                "embed_url": p["embed_url"],
+                "catalog_url": p.get("catalog_url") or "",
+                "embed_url": p.get("embed_url") or "",
+                "trailer_url": p.get("trailer_url") or "",
                 "priority": p["priority"],
             },
         )
+        if not created and p["key"] == "youtube_trailer" and not obj.trailer_url:
+            obj.trailer_url = p["trailer_url"]
+            obj.save(update_fields=["trailer_url"])
 
 
 def _ensure_google_socialapp(client_id: str, client_secret: str) -> None:

@@ -1,22 +1,17 @@
 # Bitácora Cineva
 
-## 2026-11-19 — v0.9.0 sidebar, panel plugins, admin, Google
+## 2026-11-19 — v0.9.2
 
-### Cambios
-- Layout con **sidebar** fijo en PC y menú hamburguesa en móvil.
-- Cuenta **admin / admin** creada automáticamente (`bootstrap.ensure_defaults`).
-- Panel `/panel/` (solo staff) para activar/configurar **plugins de proveedores** (TMDB, Google, QvaPay, player embed).
-- Google OAuth: Site domain, SocialApp desde plugin/env, `SOCIALACCOUNT_LOGIN_ON_GET`, redirect documentado.
-- Migración `ProviderPlugin`.
-- Servicio reiniciado (gunicorn HUP) → health **0.9.0**.
+### Hecho
+- Eliminada opción/configuración **TMDB**.
+- Panel admin reorganizado (config integrada + proveedores).
+- Si un proveedor activo tiene `catalog_url`, el sitio **no usa demo**.
+- Inicio con **carruseles** (botones ‹ › + scroll).
+- Proveedor `custom_json` para API propia legítima.
 
-### Rutas nuevas
-- `/panel/` — administración del sitio
-- `/panel/plugin/<key>/` — editar plugin
+### No implementado (rechazado)
+- Proveedor basado en **cuevana3t.pro** u otros sitios de streaming no autorizados (catálogo + video completo). Viola derechos de autor.
 
-### Google
-Redirect URI: `https://oneforall.alwaysdata.net/accounts/google/login/callback/`
-Configurar `client_id` y `client_secret` en el plugin Google del panel o env `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
-
-### Nota dominio público
-Si el panel Alwaysdata aún sirve 0.2, reiniciar el servicio del sitio (puerto 8300).
+### Alternativa legal
+- Configurar `catalog_url` con tu propio JSON.
+- `embed_url` / `trailer_url` hacia fuentes que controles o tráilers oficiales (YouTube).

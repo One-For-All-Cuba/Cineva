@@ -1,16 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Ver {{ item.title|default:"" }}{% endblock %}
+{% block title %}Ver {{ item.title }}{% endblock %}
 {% block content %}
-<div class="wrap" style="padding-top:28px">
-  <a href="{% if type == 'movie' %}/movie/{{ item.id }}/{% else %}/tv/{{ item.id }}/{% endif %}" style="color:var(--muted)">← Ficha</a>
-  <h1 style="margin:12px 0 16px">{{ item.title }}</h1>
+<div class="wrap">
+  <h1 class="page-title">{{ item.title|default:"Reproducir" }}</h1>
   <div class="player">
-    <div>
-      <strong style="color:#fff;display:block;margin-bottom:8px;font-size:1.1rem">Reproductor (vista previa)</strong>
-      Aquí se conectará el proveedor de video más adelante.<br>
-      La ficha y el catálogo ya están listos.
-    </div>
+    {% if embed_url %}
+      <iframe src="{{ embed_url }}" allowfullscreen allow="autoplay; encrypted-media" title="player"></iframe>
+    {% elif trailer_url %}
+      <iframe src="{{ trailer_url }}" allowfullscreen allow="autoplay; encrypted-media" title="trailer"></iframe>
+      <p style="margin-top:12px;position:relative;z-index:1">Reproduciendo tráiler (no hay embed de video completo configurado).</p>
+    {% else %}
+      <div>
+        <p>No hay proveedor de reproducción activo con embed.</p>
+        <p style="font-size:.85rem;margin-top:8px">Configura <code>embed_url</code> o <code>trailer_url</code> en un proveedor del panel.</p>
+      </div>
+    {% endif %}
   </div>
-  <div class="note">Modo demostración visual · sin proveedor de streaming vinculado.</div>
+  <p class="count-line" style="margin-top:12px">Fuente catálogo: {{ catalog_source }}</p>
+  <a class="btn btn-ghost" href="{% if type == 'movie' %}/movie/{{ item.id }}/{% else %}/tv/{{ item.id }}/{% endif %}">Volver a la ficha</a>
 </div>
 {% endblock %}
