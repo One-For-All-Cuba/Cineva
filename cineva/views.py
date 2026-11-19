@@ -16,7 +16,7 @@ from . import demo_catalog as demo
 from . import tmdb
 
 log = logging.getLogger(__name__)
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 
 
 def _source() -> str:
@@ -53,6 +53,7 @@ def home(request):
         anime = tmdb.anime_discover()[:18]
         popular = trending[:8]
         hero = next((c for c in (trending or movies) if c.get("backdrop") or c.get("poster")), None)
+        genres = []
     else:
         trending = demo.trending()
         movies = demo.movies()
@@ -60,6 +61,7 @@ def home(request):
         anime = demo.anime()
         popular = trending[:8]
         hero = trending[0] if trending else None
+        genres = demo.genres_for(demo.all_items())
     return render(
         request,
         "home.html",
@@ -71,6 +73,7 @@ def home(request):
             "series": series,
             "anime": anime,
             "popular": popular,
+            "genres": genres,
             "catalog_source": _source(),
             "version": VERSION,
         },
@@ -168,7 +171,7 @@ def movie_detail(request, tmdb_id: int):
             "item": item,
             "type": item.get("media_type") or "movie",
             "user": request.user,
-            "related": [x for x in demo.movies() if x["id"] != tmdb_id][:6],
+            "related": [x for x in demo.movies() if x["id"] != tmdb_id][:8],
             "catalog_source": _source(),
             "version": VERSION,
         },
@@ -180,6 +183,7 @@ def tv_detail(request, tmdb_id: int):
     item = tmdb.tv_detail(tmdb_id) if tmdb.available() else None
     if not item or not item.get("id"):
         item = demo.by_id(tmdb_id) or {}
+    pool = demo.anime() if item.get("is_anime") else demo.series()
     return render(
         request,
         "detail.html",
@@ -187,7 +191,7 @@ def tv_detail(request, tmdb_id: int):
             "item": item,
             "type": item.get("media_type") or "tv",
             "user": request.user,
-            "related": [x for x in (demo.anime() if item.get("is_anime") else demo.series()) if x["id"] != tmdb_id][:6],
+            "related": [x for x in pool if x["id"] != tmdb_id][:8],
             "catalog_source": _source(),
             "version": VERSION,
         },

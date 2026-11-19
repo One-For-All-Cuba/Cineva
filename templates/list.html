@@ -44,6 +44,7 @@
         <a class="poster-card" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}">
           <div class="thumb">
             <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
+            <div class="play"><span>▶</span></div>
             {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
           </div>
           <div class="cap">{{ r.title }}</div>

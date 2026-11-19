@@ -1,28 +1,42 @@
-# Endpoints y APIs de Cineva
+# Cineva — Endpoints y APIs
 
-## Internos (Django)
+## Internos (app Django)
 
-- GET / : Página principal con búsqueda y login.
-- GET /health/ : Estado del servicio.
-- GET /search/?q= : Búsqueda multi en TMDB (películas, series, anime).
-- GET /movie/<id>/ : Detalle de película + trailer YouTube.
-- GET /tv/<id>/ : Detalle de serie + trailer.
-- GET /accounts/login/ : Login allauth.
-- GET /accounts/google/login/ : Login Google.
-- POST /qvapay/webhook/ : Webhook de pagos QvaPay (verifica firma HMAC).
-- GET /qvapay/login/ : Placeholder para login mini-app.
-- GET /api/catalog/ : API placeholder.
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/` | Home: hero + rails películas/series/anime + sidebar populares |
+| GET | `/peliculas/` | Catálogo películas + filtros género/año/letra/orden |
+| GET | `/series/` | Catálogo series + filtros |
+| GET | `/anime/` | Catálogo anime + filtros |
+| GET | `/search/?q=` | Búsqueda (+ mismos filtros) |
+| GET | `/movie/<id>/` | Ficha película |
+| GET | `/tv/<id>/` | Ficha serie/anime |
+| GET | `/watch/<type>/<id>/` | Vista reproductor (placeholder) |
+| GET | `/health/` | JSON estado (version, catalog, tmdb) |
+| GET | `/api/catalog/?kind=&q=&genero=&ano=&orden=` | API JSON del catálogo |
+| GET | `/accounts/google/login/` | OAuth Google (allauth) |
+| GET | `/qvapay/login/` | Hint SDK mini-app QvaPay |
+| POST | `/qvapay/webhook/` | Webhook QvaPay (HMAC) |
+| GET | `/static/cineva.css` | Estilos |
 
-## Externas integradas
+### Query params de filtros
+- `genero` / `genre`
+- `ano` / `year`
+- `letra` / `letter` (A–Z)
+- `orden`: `rating` \| `year` \| `az` \| `za`
 
-- TMDB API: metadata y trailers (requiere TMDB_API_KEY).
-- QvaPay Mini-app SDK: window.QvaPay.auth.requestLogin(), QvaPay.payments.payInvoice().
-  - Crear factura en backend con POST https://api.qvapay.com/v2/create_invoice (app-id/secret).
-- Google OAuth via django-allauth.
+## Externos (preparados, no obligatorios en demo)
 
-## Pendiente
+| API | Uso |
+|-----|-----|
+| TMDB | Metadata y portadas reales si `TMDB_API_KEY` |
+| Google OAuth | Login vía django-allauth |
+| QvaPay mini-app SDK | `QvaPay.auth.requestLogin()` |
+| QvaPay webhook | Firma `x-qvapay-signature` HMAC-SHA256 |
 
-- Verificación de init_data de QvaPay en backend.
-- Modelos de usuarios premium / acceso.
-- Fuentes de streaming legal o embeds permitidos.
-- Despliegue en Alwaysdata 1gb con udocker.
+## Despliegue Alwaysdata
+- Código: `~/apps/Cineva` (+ sync `1gb` vía rclone cuando aplique)
+- Gunicorn: `127.0.0.1:8000`
+- Caddy servicio: `[fd00::4:84e]:8300` → proxy a `:8000`
+- Dominio: Apache → `services-oneforall.alwaysdata.net:8300`
+- Arranque: `~/bin/start-cineva-public.sh`
