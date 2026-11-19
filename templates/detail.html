@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>{{ item.title|default:item.name }} - Cineva</title></head>
+<body style="background:#10131c;color:#f5f6fa;font-family:system-ui;padding:20px">
+<a href="/">← Inicio</a>
+<h1>{{ item.title|default:item.name }}</h1>
+{% if item.overview %}<p>{{ item.overview }}</p>{% endif %}
+{% if item.videos.results %}
+  {% for v in item.videos.results %}
+    {% if v.site == "YouTube" and v.type == "Trailer" %}
+      <iframe width="560" height="315" src="https://www.youtube.com/embed/{{ v.key }}" frameborder="0" allowfullscreen></iframe>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+<p>Tipo: {{ type }}. Metadata de TMDB. Para reproducción completa usa fuentes legales.</p>
+</body>
+</html>

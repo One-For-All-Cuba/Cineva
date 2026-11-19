@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cineva - Películas, Series y Anime</title>
+<script src="https://www.qvapay.com/miniapps/sdk-sim.js"></script>
+<style>
+body { font-family: system-ui, sans-serif; background: #10131c; color: #f5f6fa; margin: 0; padding: 20px; }
+header { display: flex; justify-content: space-between; align-items: center; }
+a { color: #9db8ff; }
+.search-box { margin: 20px 0; }
+input { padding: 10px; width: 300px; border-radius: 8px; border: 1px solid #34425c; background: #1a1f2e; color: white; }
+button { padding: 10px 20px; background: #69d6a4; border: none; border-radius: 8px; cursor: pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cineva</h1>
+  <div>
+    {% if user.is_authenticated %}
+      Hola, {{ user.username }} | <a href="{% url 'account_logout' %}">Salir</a>
+    {% else %}
+      <a href="{% url 'account_login' %}">Entrar</a> | <a href="{% url 'google_login' %}">Google</a>
+      <button onclick="qvapayLogin()">Entrar con QvaPay</button>
+    {% endif %}
+  </div>
+</header>
+<main>
+  <div class="search-box">
+    <form action="{% url 'search' %}" method="get">
+      <input type="search" name="q" placeholder="Buscar películas, series, anime..." required>
+      <button type="submit">Buscar</button>
+    </form>
+  </div>
+  <p>Puente para ver contenido. Metadata via TMDB. Reproducción de trailers y enlaces a fuentes.</p>
+  <p>Mini-app QvaPay soportada para login y pagos premium.</p>
+</main>
+<script>
+async function qvapayLogin() {
+  if (window.QvaPay && QvaPay.auth) {
+    try {
+      const data = await QvaPay.auth.requestLogin();
+      console.log("QvaPay login:", data);
+      alert("Login QvaPay exitoso. Implementar verificación en backend.");
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+  } else {
+    alert("Abre esta página dentro de la app QvaPay o el simulador.");
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Búsqueda - Cineva</title></head>
+<body style="background:#10131c;color:#f5f6fa;font-family:system-ui">
+<a href="/">← Inicio</a>
+<h1>Resultados para "{{ query }}"</h1>
+{% for r in results %}
+  <div style="margin:10px 0;padding:10px;border:1px solid #34425c;border-radius:8px">
+    <strong>{{ r.title|default:r.name }}</strong> ({{ r.media_type }})
+    {% if r.overview %}<p>{{ r.overview|truncatewords:30 }}</p>{% endif %}
+    {% if r.media_type == "movie" %}<a href="{% url 'movie_detail' r.id %}">Ver</a>
+    {% elif r.media_type == "tv" %}<a href="{% url 'tv_detail' r.id %}">Ver</a>{% endif %}
+  </div>
+{% empty %}
+  <p>Sin resultados o falta TMDB_API_KEY.</p>
+{% endfor %}
+</body>
+</html>
