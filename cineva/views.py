@@ -1,9 +1,8 @@
-"""Vistas Cineva — catálogo profesional con filtros."""
+"""Vistas Cineva — UI profesional estable."""
 from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import logging
 
 from django.conf import settings
@@ -16,7 +15,7 @@ from . import demo_catalog as demo
 from . import tmdb
 
 log = logging.getLogger(__name__)
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 
 
 def _source() -> str:
@@ -83,11 +82,7 @@ def home(request):
 def _list_page(request, title: str, items: list[dict], kind: str):
     f = _filters_from_request(request)
     filtered = demo.filter_catalog(
-        items,
-        genre=f["genre"],
-        year=f["year"],
-        letter=f["letter"],
-        orden=f["orden"],
+        items, genre=f["genre"], year=f["year"], letter=f["letter"], orden=f["orden"]
     )
     return render(
         request,

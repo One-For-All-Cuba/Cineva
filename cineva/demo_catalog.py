@@ -1,16 +1,75 @@
-"""Catálogo demo visual completo — portadas y metadatos para UI profesional."""
+"""Catálogo demo — portadas SVG estables (misma imagen siempre)."""
 from __future__ import annotations
 
 from typing import Iterable
+from urllib.parse import quote
 
 
-def _poster(seed: str, w: int = 400, h: int = 600) -> str:
-    # Imágenes estables por seed (aspecto de portada fotográfica)
-    return f"https://picsum.photos/seed/cineva-{seed}/{w}/{h}"
+_PALETTES = [
+    ("#1a2744", "#3b82f6"),
+    ("#2a1540", "#a855f7"),
+    ("#0f2a22", "#10b981"),
+    ("#3a1a1a", "#f43f5e"),
+    ("#1a2a3a", "#0ea5e9"),
+    ("#2a2010", "#f59e0b"),
+    ("#1a1030", "#8b5cf6"),
+    ("#102030", "#06b6d4"),
+    ("#1f2937", "#6366f1"),
+    ("#311b1b", "#fb7185"),
+]
 
 
-def _backdrop(seed: str) -> str:
-    return f"https://picsum.photos/seed/cineva-bg-{seed}/1280/720"
+def _poster(item_id: int, title: str, w: int = 400, h: int = 600) -> str:
+    c1, c2 = _PALETTES[item_id % len(_PALETTES)]
+    # título partido en líneas cortas
+    words = title.split()
+    lines, cur = [], ""
+    for w0 in words:
+        trial = (cur + " " + w0).strip()
+        if len(trial) > 16 and cur:
+            lines.append(cur)
+            cur = w0
+        else:
+            cur = trial
+    if cur:
+        lines.append(cur)
+    lines = lines[:4]
+    text_elems = []
+    start_y = 280 - (len(lines) - 1) * 18
+    for i, line in enumerate(lines):
+        y = start_y + i * 36
+        safe = (
+            line.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+        )
+        text_elems.append(
+            f'<text x="200" y="{y}" text-anchor="middle" fill="#ffffff" '
+            f'font-family="system-ui,Segoe UI,sans-serif" font-size="26" font-weight="700">{safe}</text>'
+        )
+    texts = "\n".join(text_elems)
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="{c1}"/>
+      <stop offset="100%" stop-color="{c2}"/>
+    </linearGradient>
+  </defs>
+  <rect width="{w}" height="{h}" fill="url(#g)"/>
+  <rect x="0" y="0" width="{w}" height="{h}" fill="url(#g)" opacity="1"/>
+  <circle cx="320" cy="80" r="90" fill="#ffffff" opacity="0.06"/>
+  <circle cx="60" cy="520" r="120" fill="#000000" opacity="0.15"/>
+  <text x="24" y="40" fill="#ffffff" opacity="0.55" font-family="system-ui,sans-serif" font-size="14" font-weight="600">CINEVA</text>
+  {texts}
+  <rect x="24" y="{h-48}" width="56" height="22" rx="6" fill="#f5c518"/>
+  <text x="52" y="{h-32}" text-anchor="middle" fill="#111" font-family="system-ui,sans-serif" font-size="12" font-weight="800">HD</text>
+</svg>'''
+    return "data:image/svg+xml;charset=utf-8," + quote(svg)
+
+
+def _backdrop(item_id: int, title: str) -> str:
+    return _poster(item_id, title, 1280, 720)
 
 
 def _item(
@@ -30,14 +89,13 @@ def _item(
     is_anime: bool = False,
     quality: str = "HD",
 ) -> dict:
-    seed = f"{id}-{title[:20].replace(' ', '')}"
     return {
         "id": id,
         "media_type": media_type,
         "title": title,
         "overview": overview,
-        "poster": _poster(seed),
-        "backdrop": _backdrop(seed),
+        "poster": _poster(id, title),
+        "backdrop": _backdrop(id, title),
         "vote": vote,
         "year": year,
         "genres": genres,
@@ -53,16 +111,14 @@ def _item(
 
 
 DEMO: list[dict] = [
-    # —— Películas ——
     _item(101, "movie", "Noche en La Habana",
           "Un detective regresa a la ciudad tras veinte años para resolver el misterio que marcó su juventud.",
           "2024", 8.2, ["Drama", "Thriller"], runtime=128,
           tagline="Algunos secretos no se quedan en el pasado.",
-          cast=["Elena Ruiz", "Marco Vidal", "Sofía Méndez"]),
+          cast=["Elena Ruiz", "Marco Vidal"]),
     _item(102, "movie", "Horizonte Rojo",
           "Una piloto de drones descubre que la guerra que combate se retransmite como entretenimiento.",
           "2025", 7.6, ["Ciencia ficción", "Acción"], runtime=142,
-          tagline="La guerra también tiene audiencia.",
           cast=["Aya Okada", "Leo Brandt"]),
     _item(103, "movie", "El último café",
           "Tres amigos se reúnen en el local que heredaron. Una noche de lluvia saca a la luz promesas rotas.",
@@ -75,40 +131,39 @@ DEMO: list[dict] = [
     _item(105, "movie", "Códigos del sur",
           "Un ciberespecialista se infiltra en una red clandestina que opera desde el Caribe.",
           "2025", 7.4, ["Acción", "Thriller"], runtime=131,
-          cast=["Diego Alarcón", "Nadia Cruz"]),
-    _item(106, "movie", "Luces de mediana noche",
-          "Una pianista pierde la capacidad de tocar tras un accidente y encuentra sentido enseñando a un niño prodigio.",
+          cast=["Diego Alarcón"]),
+    _item(106, "movie", "Luces de medianoche",
+          "Una pianista pierde la capacidad de tocar tras un accidente y encuentra sentido enseñando.",
           "2022", 8.5, ["Drama", "Música"], runtime=112,
           cast=["Marina Beltrán"]),
     _item(107, "movie", "Desierto interior",
           "Dos hermanos cruzan el desierto para cumplir la última voluntad de su madre.",
           "2024", 7.8, ["Drama"], runtime=121,
-          cast=["Tomás Rivas", "Julián Rivas"]),
+          cast=["Tomás Rivas"]),
     _item(108, "movie", "Satélite 9",
           "La tripulación de una estación orbital pierde el contacto con la Tierra.",
           "2025", 7.1, ["Ciencia ficción", "Suspense"], runtime=135,
-          cast=["Hannah Cole", "Yuri Petrov"]),
+          cast=["Hannah Cole"]),
     _item(109, "movie", "Cristal negro",
           "Una joyera descubre que las piedras que vende alteran los recuerdos de quien las lleva.",
           "2023", 7.3, ["Fantasía", "Drama"], runtime=110,
           cast=["Lina Vargas"]),
     _item(110, "movie", "Ruta 47",
-          "Un camionero transporta un cargamento que no debería existir. Cada parada acerca más a quienes lo persiguen.",
+          "Un camionero transporta un cargamento que no debería existir.",
           "2026", 7.7, ["Acción", "Suspense"], runtime=119,
           cast=["Andrés Melo"]),
     _item(111, "movie", "La casa del faro",
-          "Una escritora hereda un faro aislado donde las noches traen visitas que no están en ningún registro.",
+          "Una escritora hereda un faro aislado donde las noches traen visitas sin registro.",
           "2021", 8.1, ["Terror", "Misterio"], runtime=98,
           cast=["Beatriz Sol"]),
     _item(112, "movie", "Golpe de sol",
-          "Dos rivales de la alta cocina se ven obligados a compartir cocina en un concurso internacional.",
+          "Dos rivales de la alta cocina se ven obligados a compartir cocina en un concurso.",
           "2024", 7.0, ["Comedia", "Romance"], runtime=106,
-          cast=["Camila Ortiz", "Hugo Serra"]),
-    # —— Series ——
+          cast=["Camila Ortiz"]),
     _item(201, "tv", "Barrio Norte",
           "Crónica coral de un vecindario donde todos se conocen demasiado.",
           "2023", 8.4, ["Drama", "Comedia"], seasons=3, episodes=24,
-          cast=["Laura Pino", "Esteban Gil"]),
+          cast=["Laura Pino"]),
     _item(202, "tv", "Señal perdida",
           "Una periodista investiga desapariciones vinculadas a una frecuencia de radio ilegal.",
           "2024", 8.1, ["Thriller", "Misterio"], seasons=2, episodes=16,
@@ -116,7 +171,7 @@ DEMO: list[dict] = [
     _item(203, "tv", "Isla cero",
           "Supervivientes de un naufragio descubren que la isla no aparece en ningún mapa.",
           "2025", 7.7, ["Aventura", "Fantasía"], seasons=1, episodes=10,
-          cast=["Omar Díaz", "Kim Seo"]),
+          cast=["Omar Díaz"]),
     _item(204, "tv", "Oficina 12",
           "Empleados de un ministerio descubren un departamento que no debería existir.",
           "2022", 8.0, ["Comedia", "Fantasía"], seasons=2, episodes=18,
@@ -124,26 +179,25 @@ DEMO: list[dict] = [
     _item(205, "tv", "Frontera azul",
           "Agentes de una unidad especial vigilan el tráfico marítimo ilegal.",
           "2024", 7.5, ["Crimen", "Drama"], seasons=2, episodes=14,
-          cast=["Héctor Salas", "Ana Belén Cruz"]),
+          cast=["Héctor Salas"]),
     _item(206, "tv", "Después del fuego",
           "Tras un incendio que destruye un pueblo, los vecinos reconstruyen más que casas.",
           "2023", 8.3, ["Drama"], seasons=1, episodes=8,
           cast=["Inés Marín"]),
     _item(207, "tv", "Protocolo Aurora",
-          "Científicos intentan revertir un experimento climático que salió de control.",
+          "Científicos intentan revertir un experimento climático fuera de control.",
           "2025", 7.6, ["Ciencia ficción", "Drama"], seasons=1, episodes=8,
           cast=["Noah Keller"]),
     _item(208, "tv", "Noches de feria",
-          "La vida de una familia que monta atracciones ambulantes cambia cuando llega un forastero.",
+          "Una familia de atracciones ambulantes cambia cuando llega un forastero.",
           "2022", 7.8, ["Drama", "Misterio"], seasons=2, episodes=12,
           cast=["Rita Campos"]),
-    # —— Anime ——
     _item(301, "tv", "Estrella de papel",
-          "En una academia donde los hechizos se dibujan, una estudiante sin don aparente despierta un poder prohibido.",
+          "En una academia donde los hechizos se dibujan, una estudiante despierta un poder prohibido.",
           "2024", 8.6, ["Anime", "Fantasía"], seasons=2, episodes=24, is_anime=True,
           cast=["Yuki Hoshino"]),
     _item(302, "tv", "Mecha Distrito 7",
-          "Pilotóles pilotean mechas urbanos para defender la ciudad entre torneos y secretos corporativos.",
+          "Pilotos de instituto defienden la ciudad entre torneos y secretos corporativos.",
           "2025", 7.9, ["Anime", "Acción"], seasons=1, episodes=12, is_anime=True,
           cast=["Ren Takahashi"]),
     _item(303, "tv", "Sakura Express",
@@ -151,19 +205,19 @@ DEMO: list[dict] = [
           "2023", 8.2, ["Anime", "Aventura"], seasons=1, episodes=13, is_anime=True,
           cast=["Aoi Fujimura"]),
     _item(304, "tv", "Sombras de Kioto",
-          "Un exorcista moderno y un espíritu antiguo limpian maldiciones en la ciudad antigua.",
+          "Un exorcista moderno y un espíritu antiguo limpian maldiciones en la ciudad.",
           "2024", 8.0, ["Anime", "Sobrenatural"], seasons=2, episodes=20, is_anime=True,
           cast=["Kenji Morita"]),
     _item(305, "tv", "Pixel Heart",
-          "Jugadores atrapados en un MMO vintage deben completar la misión final antes del apagado.",
+          "Jugadores atrapados en un MMO vintage deben completar la misión final.",
           "2025", 7.8, ["Anime", "Aventura"], seasons=1, episodes=12, is_anime=True,
           cast=["Mika Sato"]),
     _item(306, "tv", "Viento de acero",
-          "En un archipiélago de islas flotantes, pilotos de planeadores compiten en carreras letales.",
+          "En islas flotantes, pilotos de planeadores compiten en carreras letales.",
           "2022", 8.4, ["Anime", "Acción"], seasons=3, episodes=36, is_anime=True,
           cast=["Sora Hayashi"]),
     _item(307, "tv", "Café Lunar",
-          "Un café que solo abre de madrugada atiende a clientes que ya no están vivos… del todo.",
+          "Un café que solo abre de madrugada atiende a clientes que ya no están del todo vivos.",
           "2026", 8.3, ["Anime", "Drama"], seasons=1, episodes=10, is_anime=True,
           cast=["Hana Aoki"]),
 ]
