@@ -1,19 +1,22 @@
 # Bitácora Cineva
 
-## 2026-11-19 — v0.8.0 UI estable + reinicio
+## 2026-11-19 — v0.9.0 sidebar, panel plugins, admin, Google
 
-### Problema reportado
-- Al refrescar, la página se veía distinta cada vez.
+### Cambios
+- Layout con **sidebar** fijo en PC y menú hamburguesa en móvil.
+- Cuenta **admin / admin** creada automáticamente (`bootstrap.ensure_defaults`).
+- Panel `/panel/` (solo staff) para activar/configurar **plugins de proveedores** (TMDB, Google, QvaPay, player embed).
+- Google OAuth: Site domain, SocialApp desde plugin/env, `SOCIALACCOUNT_LOGIN_ON_GET`, redirect documentado.
+- Migración `ProviderPlugin`.
+- Servicio reiniciado (gunicorn HUP) → health **0.9.0**.
 
-### Causa
-1. El dominio público (`oneforall.alwaysdata.net`) a menudo servía **v0.2** (proceso del panel Alwaysdata), mientras el stack local ya era 0.7+.
-2. Portadas vía `picsum.photos` podían variar de percepción; se sustituyen por **SVG data-URI fijos** por título/id.
+### Rutas nuevas
+- `/panel/` — administración del sitio
+- `/panel/plugin/<key>/` — editar plugin
 
-### Acciones
-- Portadas SVG generadas en `demo_catalog.py` (gradiente + título + badge HD) — idénticas en cada recarga.
-- VERSION `0.8.0`.
-- Deploy a `~/apps/Cineva`, sync `1gb`, reinicio gunicorn 127.0.0.1:8000 + Caddy fd00::4:84e:8300.
-- Script `start-cineva-public.sh` actualizado (health no va a MCP).
+### Google
+Redirect URI: `https://oneforall.alwaysdata.net/accounts/google/login/callback/`
+Configurar `client_id` y `client_secret` en el plugin Google del panel o env `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
 
-### Nota panel
-Si el dominio sigue en 0.2, reiniciar el sitio/servicio en el panel Alwaysdata (puerto 8300).
+### Nota dominio público
+Si el panel Alwaysdata aún sirve 0.2, reiniciar el servicio del sitio (puerto 8300).
