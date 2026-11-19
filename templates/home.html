@@ -1,83 +1,77 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cineva — Películas, Series y Anime</title>
-<script src="https://www.qvapay.com/miniapps/sdk-sim.js"></script>
-<style>
-:root{--bg:#0c0f16;--card:#161b26;--text:#eef1f8;--muted:#9aa3b5;--acc:#6ee7a8;--link:#9db8ff}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text)}
-a{color:var(--link);text-decoration:none}header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #243044}
-.brand{font-weight:800;letter-spacing:-.03em;font-size:1.35rem}.brand span{color:var(--acc)}
-nav a{margin-left:12px;font-size:.9rem}
-.search{display:flex;gap:8px;padding:16px 20px}input[type=search]{flex:1;max-width:420px;padding:10px 14px;border-radius:10px;border:1px solid #2a3548;background:#121722;color:var(--text)}
-button,.btn{padding:10px 16px;border:0;border-radius:10px;background:var(--acc);color:#062616;font-weight:700;cursor:pointer}
-section{padding:12px 20px 24px}h2{font-size:1.1rem;margin:8px 0 14px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
-.card{background:var(--card);border-radius:12px;overflow:hidden;border:1px solid #243044;transition:transform .15s}.card:hover{transform:translateY(-3px)}
-.card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#0a0d14}
-.card .meta{padding:8px 10px;font-size:.82rem}.card .meta strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.badge{display:inline-block;font-size:.7rem;color:var(--acc);margin-top:4px}
-.warn{padding:12px 20px;color:#fbbf24}.foot{padding:24px 20px;color:var(--muted);font-size:.85rem}
-</style>
-</head>
-<body>
-<header>
-  <div class="brand">Cine<span>va</span></div>
-  <nav>
-    {% if user.is_authenticated %}
-      {{ user.username }} · <a href="{% url 'account_logout' %}">Salir</a>
-    {% else %}
-      <a href="{% url 'account_login' %}">Entrar</a>
-      <a href="/accounts/google/login/">Google</a>
-      <button type="button" onclick="qvapayLogin()" class="btn">QvaPay</button>
-    {% endif %}
-  </nav>
-</header>
-<form class="search" action="{% url 'search' %}" method="get">
-  <input type="search" name="q" placeholder="Buscar películas, series, anime…" required>
-  <button type="submit">Buscar</button>
-</form>
-{% if not tmdb_ok %}<p class="warn">Configura TMDB_API_KEY para el catálogo.</p>{% endif %}
-{% if trending %}
-<section><h2>Tendencias</h2><div class="grid">
-{% for r in trending %}
-  <a class="card" href="{% if r.media_type == 'movie' %}{% url 'movie_detail' r.id %}{% else %}{% url 'tv_detail' r.id %}{% endif %}">
-    {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
-    <div class="meta"><strong>{{ r.title }}</strong><span class="badge">{{ r.media_type }} · {{ r.year }}</span></div>
-  </a>
-{% endfor %}
-</div></section>
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+{% if not tmdb_ok %}<p class="warn">Configura TMDB_API_KEY para cargar el catálogo.</p>{% endif %}
+
+{% if hero %}
+<section class="hero">
+  <div class="hero-bg" style="background-image:url('{{ hero.backdrop|default:hero.poster }}')"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-kicker">{% if hero.media_type == 'tv' %}Serie{% else %}Película{% endif %}</div>
+    <h1 class="hero-title">{{ hero.title }} <span class="badge">{% if hero.media_type == 'tv' %}SERIE{% else %}PELÍCULA{% endif %}</span></h1>
+    <div class="meta-row">
+      {% if hero.vote %}<span class="score">{{ hero.vote|floatformat:1 }}/10</span>{% endif %}
+      {% if hero.year %}<span>{{ hero.year }}</span>{% endif %}
+      <span class="hd">HD</span>
+    </div>
+    <p class="hero-plot">{{ hero.overview|truncatewords:42 }}</p>
+    <a class="btn btn-primary" href="{% if hero.media_type == 'movie' %}/movie/{{ hero.id }}/{% else %}/tv/{{ hero.id }}/{% endif %}">▶ Ver ficha</a>
+  </div>
+</section>
 {% endif %}
-{% if movies %}
-<section><h2>Películas</h2><div class="grid">
-{% for r in movies %}
-  <a class="card" href="{% url 'movie_detail' r.id %}">{% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}<div class="meta"><strong>{{ r.title }}</strong></div></a>
-{% endfor %}
-</div></section>
-{% endif %}
-{% if series %}
-<section><h2>Series</h2><div class="grid">
-{% for r in series %}
-  <a class="card" href="{% url 'tv_detail' r.id %}">{% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}<div class="meta"><strong>{{ r.title }}</strong></div></a>
-{% endfor %}
-</div></section>
-{% endif %}
-{% if anime %}
-<section><h2>Animación / Anime</h2><div class="grid">
-{% for r in anime %}
-  <a class="card" href="{% url 'tv_detail' r.id %}">{% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}<div class="meta"><strong>{{ r.title }}</strong></div></a>
-{% endfor %}
-</div></section>
-{% endif %}
-<p class="foot">Cineva {{ version }} · Puente de metadata (TMDB) + trailers. Mini-app QvaPay lista.</p>
-<script>
-async function qvapayLogin(){
-  if(window.QvaPay&&QvaPay.auth){
-    try{const d=await QvaPay.auth.requestLogin();console.log(d);alert('Login QvaPay OK');}
-    catch(e){alert(e.message||e);}
-  }else alert('Abre Cineva dentro de la app QvaPay o el simulador.');
-}
-</script>
-</body></html>
+
+<div class="wrap">
+  {% if trending %}
+  <div class="section-head"><h2>Tendencias</h2></div>
+  <div class="rail">
+    {% for r in trending %}
+    <a class="poster-card" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}">
+      {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
+      {% if r.poster %}<img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">{% endif %}
+      <div class="cap">{{ r.title }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if movies %}
+  <div class="section-head"><h2>Películas online</h2><a class="btn btn-primary" href="/search/?q=a">Más películas</a></div>
+  <div class="rail">
+    {% for r in movies %}
+    <a class="poster-card" href="/movie/{{ r.id }}/">
+      {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
+      {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
+      <div class="cap">{{ r.title }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if series %}
+  <div class="section-head"><h2>Series online</h2></div>
+  <div class="rail">
+    {% for r in series %}
+    <a class="poster-card" href="/tv/{{ r.id }}/">
+      {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
+      {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
+      <div class="cap">{{ r.title }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if anime %}
+  <div class="section-head"><h2>Animación y anime</h2></div>
+  <div class="rail">
+    {% for r in anime %}
+    <a class="poster-card" href="/tv/{{ r.id }}/">
+      {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
+      {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
+      <div class="cap">{{ r.title }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

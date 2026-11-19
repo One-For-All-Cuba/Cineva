@@ -1,32 +1,18 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ver {{ item.title|default:"" }} — Cineva</title>
-<style>
-body{margin:0;font-family:system-ui,sans-serif;background:#0c0f16;color:#eef1f8}
-a{color:#9db8ff}main{max-width:960px;margin:0 auto;padding:20px}
-.player{background:#000;border-radius:12px;overflow:hidden;border:1px solid #243044;min-height:200px}
-iframe{width:100%;aspect-ratio:16/9;border:0}.note{margin-top:16px;padding:14px;background:#161b26;border-radius:10px;color:#9aa3b5;font-size:.92rem}
-</style>
-</head>
-<body>
-<main>
-<a href="{% if type == 'movie' %}{% url 'movie_detail' item.id %}{% else %}{% url 'tv_detail' item.id %}{% endif %}">← Ficha</a>
-<h1>{{ item.title }}</h1>
-<div class="player">
-{% if item.trailers %}
-  {% with t=item.trailers.0 %}
-  <iframe src="https://www.youtube.com/embed/{{ t.key }}?autoplay=0" allowfullscreen allow="accelerometer; encrypted-media; picture-in-picture"></iframe>
-  {% endwith %}
-{% else %}
-  <p style="padding:40px;text-align:center;color:#9aa3b5">Sin trailer disponible en TMDB.</p>
-{% endif %}
+{% extends "base.html" %}
+{% block title %}Ver {{ item.title|default:"" }}{% endblock %}
+{% block content %}
+<div class="wrap" style="padding-top:28px">
+  <a href="{% if type == 'movie' %}/movie/{{ item.id }}/{% else %}/tv/{{ item.id }}/{% endif %}" style="color:var(--muted)">← Ficha</a>
+  <h1 style="margin:12px 0 16px">{{ item.title }}</h1>
+  <div class="player">
+    {% if item.trailers %}
+      {% with t=item.trailers.0 %}
+      <iframe src="https://www.youtube.com/embed/{{ t.key }}" allowfullscreen allow="accelerometer; encrypted-media; picture-in-picture"></iframe>
+      {% endwith %}
+    {% else %}
+      <p style="padding:48px;text-align:center;color:var(--muted)">Sin trailer en TMDB.</p>
+    {% endif %}
+  </div>
+  <div class="note"><strong>Modo puente.</strong> Cineva muestra metadata y trailers oficiales. No aloja la obra completa.</div>
 </div>
-<div class="note">
-  <strong>Modo puente.</strong> Cineva muestra metadata y trailers oficiales (YouTube/TMDB).
-  La reproducción de la obra completa requiere fuentes con licencia o enlaces legales que configures tú.
-</div>
-</main>
-</body></html>
+{% endblock %}

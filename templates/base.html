@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Cineva{% endblock %} — Películas, Series y Anime</title>
+<link rel="stylesheet" href="/static/cineva.css">
+<script src="https://www.qvapay.com/miniapps/sdk-sim.js"></script>
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="topbar">Cineva · puente de catálogo y trailers · metadata TMDB</div>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="/">
+      <span class="logo-mark">C</span>
+      cine<em>va</em>
+    </a>
+    <nav class="main-nav">
+      <a href="/" class="{% if request.path == '/' %}active{% endif %}">Inicio</a>
+      <a href="/search/?q=movie">Películas</a>
+      <a href="/search/?q=serie">Series</a>
+      <a href="/api/catalog/?kind=anime">Anime</a>
+    </nav>
+    <div class="header-tools">
+      <form class="search-pill" action="/search/" method="get">
+        <input type="search" name="q" placeholder="Buscar películas y series" value="{{ query|default:'' }}" required>
+        <button type="submit" aria-label="Buscar">⌕</button>
+      </form>
+      {% if user.is_authenticated %}
+        <span style="color:var(--muted);font-size:.85rem">{{ user.username }}</span>
+        <a class="btn btn-ghost" href="/accounts/logout/">Salir</a>
+      {% else %}
+        <a class="btn btn-ghost" href="/accounts/google/login/">Google</a>
+        <button type="button" class="btn btn-primary" onclick="qvapayLogin()">QvaPay</button>
+      {% endif %}
+    </div>
+  </div>
+</header>
+{% block content %}{% endblock %}
+<footer class="footer">Cineva · No aloja video con copyright · Trailers y fichas vía TMDB/YouTube</footer>
+<script>
+async function qvapayLogin(){
+  if(window.QvaPay&&QvaPay.auth){
+    try{await QvaPay.auth.requestLogin();alert('Login QvaPay OK');}
+    catch(e){alert(e.message||e);}
+  } else alert('Abre Cineva en la mini-app QvaPay o el simulador.');
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

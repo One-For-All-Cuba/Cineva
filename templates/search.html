@@ -1,21 +1,18 @@
-<!doctype html>
-<html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Búsqueda — Cineva</title>
-<style>body{margin:0;font-family:system-ui;background:#0c0f16;color:#eef1f8;padding:20px}a{color:#9db8ff}.row{display:flex;gap:12px;margin:12px 0;padding:10px;background:#161b26;border-radius:10px}.row img{width:60px;border-radius:6px}</style>
-</head>
-<body>
-<a href="/">← Inicio</a>
-<h1>Resultados: “{{ query }}”</h1>
-{% for r in results %}
-<div class="row">
-  {% if r.poster %}<img src="{{ r.poster }}" alt="">{% endif %}
-  <div>
-    <strong><a href="{% if r.media_type == 'movie' %}{% url 'movie_detail' r.id %}{% else %}{% url 'tv_detail' r.id %}{% endif %}">{{ r.title }}</a></strong>
-    <div>{{ r.media_type }} · {{ r.year }}</div>
-    <p style="color:#9aa3b5;font-size:.9rem">{{ r.overview|truncatewords:28 }}</p>
+{% extends "base.html" %}
+{% block title %}Búsqueda{% endblock %}
+{% block content %}
+<div class="wrap" style="padding-top:28px">
+  <div class="section-head"><h2>Resultados{% if query %}: “{{ query }}”{% endif %}</h2></div>
+  <div class="grid">
+    {% for r in results %}
+    <a class="poster-card" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}" style="flex:initial">
+      {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
+      {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
+      <div class="cap">{{ r.title }}</div>
+    </a>
+    {% empty %}
+    <p class="warn">{% if not tmdb_ok %}Falta TMDB_API_KEY.{% else %}Sin resultados.{% endif %}</p>
+    {% endfor %}
   </div>
 </div>
-{% empty %}
-<p>{% if not tmdb_ok %}Falta TMDB_API_KEY.{% else %}Sin resultados.{% endif %}</p>
-{% endfor %}
-</body></html>
+{% endblock %}

@@ -1,40 +1,36 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ item.title|default:"Detalle" }} — Cineva</title>
-<style>
-body{margin:0;font-family:system-ui,sans-serif;background:#0c0f16;color:#eef1f8}
-a{color:#9db8ff}main{max-width:900px;margin:0 auto;padding:20px}
-.hero{display:grid;gap:20px;grid-template-columns:140px 1fr}@media(min-width:600px){.hero{grid-template-columns:200px 1fr}}
-.poster{width:100%;border-radius:12px;border:1px solid #243044}h1{margin:0 0 8px;font-size:1.6rem}
-.muted{color:#9aa3b5}.btn{display:inline-block;margin-top:12px;padding:10px 16px;background:#6ee7a8;color:#062616;border-radius:10px;font-weight:700;text-decoration:none}
-iframe{width:100%;max-width:640px;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:16px}
-</style>
-</head>
-<body>
-<main>
-<a href="/">← Inicio</a>
+{% extends "base.html" %}
+{% block title %}{{ item.title|default:"Detalle" }}{% endblock %}
+{% block content %}
+<div class="wrap" style="padding-top:28px">
 {% if item.id %}
-<div class="hero" style="margin-top:16px">
-  <div>{% if item.poster %}<img class="poster" src="{{ item.poster }}" alt="">{% endif %}</div>
-  <div>
-    <h1>{{ item.title }}</h1>
-    <p class="muted">{{ type }} {% if item.year %}· {{ item.year }}{% endif %} {% if item.vote %}· ★ {{ item.vote|floatformat:1 }}{% endif %}</p>
-    {% if item.genres %}<p class="muted">{{ item.genres|join:", " }}</p>{% endif %}
-    <p>{{ item.overview }}</p>
-    <a class="btn" href="{% url 'watch' type item.id %}">Ver trailer / puente</a>
+  <div class="detail">
+    <div>{% if item.poster %}<img class="poster" src="{{ item.poster }}" alt="">{% endif %}</div>
+    <div>
+      <h1 style="margin:0 0 8px;font-size:2rem">{{ item.title }} <span class="badge">{{ type|upper }}</span></h1>
+      <div class="meta-row">
+        {% if item.vote %}<span class="score">{{ item.vote|floatformat:1 }}/10</span>{% endif %}
+        {% if item.year %}<span>{{ item.year }}</span>{% endif %}
+        {% if item.runtime %}<span>{{ item.runtime }} min</span>{% endif %}
+        <span class="hd">HD</span>
+      </div>
+      {% if item.genres %}<p style="color:var(--muted)">{{ item.genres|join:", " }}</p>{% endif %}
+      <p style="max-width:560px;color:#c5d0e6">{{ item.overview }}</p>
+      <p style="margin-top:18px">
+        <a class="btn btn-primary" href="/watch/{{ type }}/{{ item.id }}/">▶ Ver trailer</a>
+        <a class="btn btn-ghost" href="/">Inicio</a>
+      </p>
+      {% if item.trailers %}
+        {% with t=item.trailers.0 %}
+        <div class="player" style="margin-top:22px;max-width:640px">
+          <iframe src="https://www.youtube.com/embed/{{ t.key }}" allowfullscreen allow="accelerometer; encrypted-media; picture-in-picture"></iframe>
+        </div>
+        {% endwith %}
+      {% endif %}
+      {% if item.cast %}<p style="margin-top:18px;color:var(--muted);font-size:.9rem">Reparto: {% for c in item.cast %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+    </div>
   </div>
-</div>
-{% if item.trailers %}
-  {% with t=item.trailers.0 %}
-  <iframe src="https://www.youtube.com/embed/{{ t.key }}" allowfullscreen allow="accelerometer; autoplay; encrypted-media; picture-in-picture"></iframe>
-  {% endwith %}
-{% endif %}
-{% if item.cast %}<p class="muted" style="margin-top:20px">Reparto: {% for c in item.cast %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
 {% else %}
-<p>No se encontró el título (revisa TMDB_API_KEY o el id).</p>
+  <p class="warn">No se encontró el título.</p>
 {% endif %}
-</main>
-</body></html>
+</div>
+{% endblock %}

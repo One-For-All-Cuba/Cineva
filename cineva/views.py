@@ -15,7 +15,7 @@ from django.views.decorators.http import require_GET, require_POST
 from . import tmdb
 
 log = logging.getLogger(__name__)
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 
 def health(request):
@@ -35,15 +35,21 @@ def home(request):
     movies = tmdb.trending("movie", "week") if tmdb.available() else []
     series = tmdb.trending("tv", "week") if tmdb.available() else []
     anime = tmdb.anime_discover() if tmdb.available() else []
+    hero = None
+    for candidate in trending or movies:
+        if candidate.get("backdrop") or candidate.get("poster"):
+            hero = candidate
+            break
     return render(
         request,
         "home.html",
         {
             "user": request.user,
-            "trending": trending[:12],
-            "movies": movies[:10],
-            "series": series[:10],
-            "anime": anime[:10],
+            "hero": hero,
+            "trending": trending[:16],
+            "movies": movies[:16],
+            "series": series[:16],
+            "anime": anime[:16],
             "tmdb_ok": tmdb.available(),
             "version": VERSION,
         },
@@ -57,25 +63,24 @@ def search(request):
     return render(
         request,
         "search.html",
-        {"query": query, "results": results, "tmdb_ok": tmdb.available()},
+        {"query": query, "results": results, "tmdb_ok": tmdb.available(), "user": request.user},
     )
 
 
 @require_GET
 def movie_detail(request, tmdb_id: int):
     item = tmdb.movie_detail(tmdb_id)
-    return render(request, "detail.html", {"item": item, "type": "movie"})
+    return render(request, "detail.html", {"item": item, "type": "movie", "user": request.user})
 
 
 @require_GET
 def tv_detail(request, tmdb_id: int):
     item = tmdb.tv_detail(tmdb_id)
-    return render(request, "detail.html", {"item": item, "type": "tv"})
+    return render(request, "detail.html", {"item": item, "type": "tv", "user": request.user})
 
 
 @require_GET
 def watch(request, media_type: str, tmdb_id: int):
-    """Página puente: trailer + metadatos. Reproducción completa solo con fuentes legales."""
     if media_type == "movie":
         item = tmdb.movie_detail(tmdb_id)
     else:
@@ -84,7 +89,7 @@ def watch(request, media_type: str, tmdb_id: int):
     return render(
         request,
         "watch.html",
-        {"item": item, "type": media_type, "bridge": True},
+        {"item": item, "type": media_type, "bridge": True, "user": request.user},
     )
 
 
@@ -133,5 +138,4 @@ def qvapay_webhook(request):
     except json.JSONDecodeError:
         return HttpResponse(status=400)
     log.info("QvaPay webhook status=%s remote_id=%s", data.get("status"), data.get("remote_id"))
-    # TODO: activar premium cuando status == paid
     return HttpResponse("ok")
