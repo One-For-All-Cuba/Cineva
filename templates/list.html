@@ -1,20 +1,72 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<div class="wrap" style="padding-top:28px">
-  <div class="section-head"><h2>{{ title }}</h2></div>
-  <div class="grid">
-    {% for r in items %}
-    <a class="poster-card" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}" style="flex:initial">
-      {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
-      {% if r.vote %}<span class="score-pill">{{ r.vote|floatformat:1 }}</span>{% endif %}
-      {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
-      <div class="cap">{{ r.title }}</div>
-      <div class="sub">{% if r.genres %}{{ r.genres.0 }}{% endif %}</div>
-    </a>
-    {% empty %}
-    <p class="empty">No hay títulos en esta sección.</p>
+<div class="wrap">
+  <h1 class="page-title">{{ title }}</h1>
+  <p class="count-line">{{ items|length }} título{{ items|length|pluralize:"s" }}{% if all_count and all_count != items|length %} (de {{ all_count }}){% endif %}</p>
+
+  <form class="filters" method="get" action="">
+    {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+    <select name="genero" onchange="this.form.submit()" aria-label="Género">
+      <option value="">Género</option>
+      {% for g in genres %}
+      <option value="{{ g }}" {% if filters.genre == g %}selected{% endif %}>{{ g }}</option>
+      {% endfor %}
+    </select>
+    <select name="ano" onchange="this.form.submit()" aria-label="Año">
+      <option value="">Año</option>
+      {% for y in years %}
+      <option value="{{ y }}" {% if filters.year == y %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+    <select name="orden" onchange="this.form.submit()" aria-label="Orden">
+      <option value="rating" {% if filters.orden == 'rating' %}selected{% endif %}>Orden: nota</option>
+      <option value="year" {% if filters.orden == 'year' %}selected{% endif %}>Orden: año</option>
+      <option value="az" {% if filters.orden == 'az' %}selected{% endif %}>Orden: A-Z</option>
+      <option value="za" {% if filters.orden == 'za' %}selected{% endif %}>Orden: Z-A</option>
+    </select>
+    {% if filters.genre or filters.year or filters.letter %}
+    <a class="clear" href="?{% if query %}q={{ query|urlencode }}{% endif %}">Limpiar filtros</a>
+    {% endif %}
+  </form>
+
+  <div class="letter-bar">
+    {% for L in letters %}
+    <a class="{% if filters.letter == L %}on{% endif %}"
+       href="?letra={{ L }}&orden={{ filters.orden|default:'rating' }}{% if filters.genre %}&genero={{ filters.genre|urlencode }}{% endif %}{% if filters.year %}&ano={{ filters.year }}{% endif %}{% if query %}&q={{ query|urlencode }}{% endif %}">{{ L }}</a>
     {% endfor %}
+  </div>
+
+  <div class="layout-catalog">
+    <div>
+      <div class="grid">
+        {% for r in items %}
+        <a class="poster-card" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}">
+          <div class="thumb">
+            <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
+            {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
+          </div>
+          <div class="cap">{{ r.title }}</div>
+        </a>
+        {% empty %}
+        <p style="color:var(--muted);grid-column:1/-1;padding:40px 0;text-align:center">No hay resultados con estos filtros.</p>
+        {% endfor %}
+      </div>
+    </div>
+    <aside>
+      <div class="sidebar-card">
+        <h3>Populares</h3>
+        {% for r in popular %}
+        <a class="pop-row" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}">
+          <img src="{{ r.poster }}" alt="">
+          <div>
+            <div class="t">{{ r.title }}</div>
+            <div class="m">{% if r.vote %}{{ r.vote|floatformat:1 }}/10 · {% endif %}{{ r.year }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </aside>
   </div>
 </div>
 {% endblock %}

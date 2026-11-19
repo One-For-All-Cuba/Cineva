@@ -2,24 +2,15 @@
 {% block title %}Ver {{ item.title|default:"" }}{% endblock %}
 {% block content %}
 <div class="wrap" style="padding-top:28px">
-  <a href="{% if type == 'movie' %}/movie/{{ item.id }}/{% else %}/tv/{{ item.id }}/{% endif %}" style="color:var(--muted)">← Volver a la ficha</a>
-  <h1 style="margin:14px 0 18px;letter-spacing:-.03em">{{ item.title }}</h1>
+  <a href="{% if type == 'movie' %}/movie/{{ item.id }}/{% else %}/tv/{{ item.id }}/{% endif %}" style="color:var(--muted)">← Ficha</a>
+  <h1 style="margin:12px 0 16px">{{ item.title }}</h1>
   <div class="player">
-    {% if item.trailers %}
-      {% with t=item.trailers.0 %}
-      <iframe style="width:100%;aspect-ratio:16/9;border:0" src="https://www.youtube.com/embed/{{ t.key }}" allowfullscreen></iframe>
-      {% endwith %}
-    {% else %}
-      <div class="player-placeholder">
-        <strong>Vista previa del reproductor</strong>
-        Aquí se integrará el proveedor de reproducción más adelante.<br>
-        Por ahora esta pantalla completa el flujo visual de Cineva.
-      </div>
-    {% endif %}
+    <div>
+      <strong style="color:#fff;display:block;margin-bottom:8px;font-size:1.1rem">Reproductor (vista previa)</strong>
+      Aquí se conectará el proveedor de video más adelante.<br>
+      La ficha y el catálogo ya están listos.
+    </div>
   </div>
-  <div class="note">
-    <strong style="color:#fff">Modo demostración.</strong>
-    La interfaz está lista; el enlace a proveedores de video se configurará en un siguiente paso.
-  </div>
+  <div class="note">Modo demostración visual · sin proveedor de streaming vinculado.</div>
 </div>
 {% endblock %}

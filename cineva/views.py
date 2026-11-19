@@ -1,4 +1,4 @@
-"""Vistas Cineva — UI profesional con catálogo demo."""
+"""Vistas Cineva — catálogo profesional con filtros."""
 from __future__ import annotations
 
 import hashlib
@@ -16,14 +16,20 @@ from . import demo_catalog as demo
 from . import tmdb
 
 log = logging.getLogger(__name__)
-VERSION = "0.5.0-demo"
+VERSION = "0.6.0"
 
 
-def _catalog_source():
-    """TMDB si hay clave; si no, catálogo demo visual."""
-    if tmdb.available():
-        return "tmdb"
-    return "demo"
+def _source() -> str:
+    return "tmdb" if tmdb.available() else "demo"
+
+
+def _filters_from_request(request):
+    return {
+        "genre": (request.GET.get("genero") or request.GET.get("genre") or "").strip(),
+        "year": (request.GET.get("ano") or request.GET.get("year") or "").strip(),
+        "letter": (request.GET.get("letra") or request.GET.get("letter") or "").strip(),
+        "orden": (request.GET.get("orden") or "rating").strip(),
+    }
 
 
 def health(request):
@@ -32,63 +38,120 @@ def health(request):
             "status": "ok",
             "app": "Cineva",
             "version": VERSION,
-            "catalog": _catalog_source(),
+            "catalog": _source(),
             "tmdb": tmdb.available(),
-            "qvapay_configured": bool(getattr(settings, "QVAPAY_APP_SECRET", "")),
+            "items_demo": len(demo.all_items()),
         }
     )
 
 
 def home(request):
     if tmdb.available():
-        trending = tmdb.trending("all", "week")[:16]
-        movies = tmdb.trending("movie", "week")[:16]
-        series = tmdb.trending("tv", "week")[:16]
-        anime = tmdb.anime_discover()[:16]
+        trending = tmdb.trending("all", "week")[:18]
+        movies = tmdb.trending("movie", "week")[:18]
+        series = tmdb.trending("tv", "week")[:18]
+        anime = tmdb.anime_discover()[:18]
+        popular = trending[:8]
         hero = next((c for c in (trending or movies) if c.get("backdrop") or c.get("poster")), None)
-        source = "tmdb"
     else:
-        trending = demo.trending()[:16]
+        trending = demo.trending()
         movies = demo.movies()
         series = demo.series()
         anime = demo.anime()
+        popular = trending[:8]
         hero = trending[0] if trending else None
-        source = "demo"
     return render(
         request,
         "home.html",
         {
             "user": request.user,
             "hero": hero,
-            "trending": trending,
+            "trending": trending[:16],
             "movies": movies,
             "series": series,
             "anime": anime,
-            "tmdb_ok": tmdb.available(),
-            "catalog_source": source,
+            "popular": popular,
+            "catalog_source": _source(),
             "version": VERSION,
         },
     )
 
 
+def _list_page(request, title: str, items: list[dict], kind: str):
+    f = _filters_from_request(request)
+    filtered = demo.filter_catalog(
+        items,
+        genre=f["genre"],
+        year=f["year"],
+        letter=f["letter"],
+        orden=f["orden"],
+    )
+    return render(
+        request,
+        "list.html",
+        {
+            "title": title,
+            "items": filtered,
+            "all_count": len(items),
+            "user": request.user,
+            "kind": kind,
+            "genres": demo.genres_for(items),
+            "years": demo.years_for(items),
+            "letters": list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+            "filters": f,
+            "catalog_source": _source(),
+            "version": VERSION,
+            "popular": demo.trending()[:6],
+        },
+    )
+
+
+@require_GET
+def movies_page(request):
+    items = demo.movies() if not tmdb.available() else tmdb.trending("movie", "week")
+    return _list_page(request, "Todas las películas", items, "movie")
+
+
+@require_GET
+def series_page(request):
+    items = demo.series() if not tmdb.available() else tmdb.trending("tv", "week")
+    return _list_page(request, "Todas las series", items, "tv")
+
+
+@require_GET
+def anime_page(request):
+    items = demo.anime() if not tmdb.available() else tmdb.anime_discover()
+    return _list_page(request, "Anime y animación", items, "tv")
+
+
 @require_GET
 def search(request):
     query = (request.GET.get("q") or "").strip()
+    f = _filters_from_request(request)
     if tmdb.available() and query:
         results = tmdb.search_multi(query)
-        source = "tmdb"
     else:
-        results = demo.search(query) if query else demo.trending()[:12]
-        source = "demo"
+        base = demo.search(query) if query else demo.trending()
+        results = demo.filter_catalog(
+            base, genre=f["genre"], year=f["year"], letter=f["letter"], orden=f["orden"]
+        )
     return render(
         request,
-        "search.html",
+        "list.html",
         {
+            "title": f"Resultados: {query}" if query else "Explorar catálogo",
+            "items": results,
+            "all_count": len(results),
             "query": query,
-            "results": results,
-            "tmdb_ok": tmdb.available(),
-            "catalog_source": source,
             "user": request.user,
+            "kind": "all",
+            "genres": demo.genres_for(demo.all_items()),
+            "years": demo.years_for(demo.all_items()),
+            "letters": list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+            "filters": f,
+            "catalog_source": _source(),
+            "version": VERSION,
+            "popular": demo.trending()[:6],
         },
     )
 
@@ -101,7 +164,14 @@ def movie_detail(request, tmdb_id: int):
     return render(
         request,
         "detail.html",
-        {"item": item, "type": item.get("media_type") or "movie", "user": request.user},
+        {
+            "item": item,
+            "type": item.get("media_type") or "movie",
+            "user": request.user,
+            "related": [x for x in demo.movies() if x["id"] != tmdb_id][:6],
+            "catalog_source": _source(),
+            "version": VERSION,
+        },
     )
 
 
@@ -113,52 +183,29 @@ def tv_detail(request, tmdb_id: int):
     return render(
         request,
         "detail.html",
-        {"item": item, "type": item.get("media_type") or "tv", "user": request.user},
+        {
+            "item": item,
+            "type": item.get("media_type") or "tv",
+            "user": request.user,
+            "related": [x for x in (demo.anime() if item.get("is_anime") else demo.series()) if x["id"] != tmdb_id][:6],
+            "catalog_source": _source(),
+            "version": VERSION,
+        },
     )
 
 
 @require_GET
 def watch(request, media_type: str, tmdb_id: int):
-    item = None
+    item = demo.by_id(tmdb_id) or {}
     if tmdb.available():
-        item = tmdb.movie_detail(tmdb_id) if media_type == "movie" else tmdb.tv_detail(tmdb_id)
-    if not item or not item.get("id"):
-        item = demo.by_id(tmdb_id) or {}
-        media_type = item.get("media_type") or media_type
+        remote = tmdb.movie_detail(tmdb_id) if media_type == "movie" else tmdb.tv_detail(tmdb_id)
+        if remote and remote.get("id"):
+            item = remote
+    media_type = item.get("media_type") or media_type
     return render(
         request,
         "watch.html",
-        {"item": item, "type": media_type, "bridge": True, "user": request.user},
-    )
-
-
-@require_GET
-def movies_page(request):
-    items = demo.movies() if not tmdb.available() else tmdb.trending("movie", "week")
-    return render(
-        request,
-        "list.html",
-        {"title": "Películas", "items": items, "user": request.user, "kind": "movie"},
-    )
-
-
-@require_GET
-def series_page(request):
-    items = demo.series() if not tmdb.available() else tmdb.trending("tv", "week")
-    return render(
-        request,
-        "list.html",
-        {"title": "Series", "items": items, "user": request.user, "kind": "tv"},
-    )
-
-
-@require_GET
-def anime_page(request):
-    items = demo.anime() if not tmdb.available() else tmdb.anime_discover()
-    return render(
-        request,
-        "list.html",
-        {"title": "Anime y animación", "items": items, "user": request.user, "kind": "tv"},
+        {"item": item, "type": media_type, "user": request.user, "version": VERSION, "catalog_source": _source()},
     )
 
 
@@ -166,40 +213,25 @@ def anime_page(request):
 def api_catalog(request):
     kind = (request.GET.get("kind") or "trending").lower()
     q = (request.GET.get("q") or "").strip()
-    if tmdb.available():
-        if kind == "search" and q:
-            results = tmdb.search_multi(q)
-        elif kind == "anime":
-            results = tmdb.anime_discover()
-        elif kind == "movie":
-            results = tmdb.trending("movie")
-        elif kind == "tv":
-            results = tmdb.trending("tv")
-        else:
-            results = tmdb.trending("all")
-        source = "tmdb"
+    f = _filters_from_request(request)
+    if kind == "search" and q:
+        results = demo.search(q)
+    elif kind == "anime":
+        results = demo.anime()
+    elif kind == "movie":
+        results = demo.movies()
+    elif kind == "tv":
+        results = demo.series()
     else:
-        if kind == "search" and q:
-            results = demo.search(q)
-        elif kind == "anime":
-            results = demo.anime()
-        elif kind == "movie":
-            results = demo.movies()
-        elif kind == "tv":
-            results = demo.series()
-        else:
-            results = demo.trending()
-        source = "demo"
-    return JsonResponse({"kind": kind, "source": source, "count": len(results), "results": results})
+        results = demo.trending()
+    results = demo.filter_catalog(
+        results, genre=f["genre"], year=f["year"], letter=f["letter"], orden=f["orden"]
+    )
+    return JsonResponse({"kind": kind, "source": _source(), "count": len(results), "results": results})
 
 
 def qvapay_login(request):
-    return JsonResponse(
-        {
-            "status": "use_sdk",
-            "hint": "En el frontend: QvaPay.auth.requestLogin() dentro de la mini-app",
-        }
-    )
+    return JsonResponse({"status": "use_sdk", "hint": "QvaPay.auth.requestLogin()"})
 
 
 @csrf_exempt
@@ -213,9 +245,4 @@ def qvapay_webhook(request):
     expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(signature, expected):
         return HttpResponse(status=401)
-    try:
-        data = json.loads(body.decode() or "{}")
-    except json.JSONDecodeError:
-        return HttpResponse(status=400)
-    log.info("QvaPay webhook status=%s", data.get("status"))
     return HttpResponse("ok")

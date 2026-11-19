@@ -4,32 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Cineva{% endblock %} — Películas, Series y Anime</title>
-<meta name="description" content="Cineva: plataforma de descubrimiento de películas, series y anime.">
 <link rel="stylesheet" href="/static/cineva.css">
 <script src="https://www.qvapay.com/miniapps/sdk-sim.js"></script>
-{% block head %}{% endblock %}
 </head>
 <body>
-<div class="topbar">Cineva · experiencia de catálogo profesional · modo demostración visual</div>
+<div class="topbar">Cineva · catálogo de demostración visual · portadas y filtros activos</div>
 <header class="site-header">
   <div class="header-inner">
-    <a class="logo" href="/">
-      <span class="logo-mark">C</span>
-      cine<em>va</em>
-    </a>
+    <a class="logo" href="/"><span class="logo-mark">C</span> cine<em>va</em></a>
     <nav class="main-nav">
       <a href="/" class="{% if request.path == '/' %}active{% endif %}">Inicio</a>
       <a href="/peliculas/" class="{% if '/peliculas' in request.path %}active{% endif %}">Películas</a>
       <a href="/series/" class="{% if '/series' in request.path %}active{% endif %}">Series</a>
       <a href="/anime/" class="{% if '/anime' in request.path %}active{% endif %}">Anime</a>
+      <a href="/search/">Explorar</a>
     </nav>
     <div class="header-tools">
       <form class="search-pill" action="/search/" method="get">
-        <input type="search" name="q" placeholder="Buscar títulos…" value="{{ query|default:'' }}">
+        <input type="search" name="q" placeholder="Buscar películas y series" value="{{ query|default:'' }}">
         <button type="submit" aria-label="Buscar">⌕</button>
       </form>
       {% if user.is_authenticated %}
-        <span style="color:var(--muted);font-size:.85rem">{{ user.username }}</span>
         <a class="btn btn-ghost" href="/accounts/logout/">Salir</a>
       {% else %}
         <a class="btn btn-ghost" href="/accounts/google/login/">Google</a>
@@ -38,22 +33,14 @@
     </div>
   </div>
 </header>
-{% if catalog_source == 'demo' %}
-<div class="demo-banner"><span>Catálogo de demostración · títulos de ejemplo para diseño</span></div>
-{% endif %}
+{% if catalog_source == 'demo' %}<div class="demo-banner"><span>Modo demo · {{ version }}</span></div>{% endif %}
 {% block content %}{% endblock %}
-<footer class="footer">
-  <strong style="color:#fff">Cineva</strong> · Descubrimiento de contenido · v{{ version|default:"0.5" }}<br>
-  Los títulos de ejemplo son ficticios y solo ilustran la interfaz.
-</footer>
+<footer class="footer">Cineva · Interfaz profesional de descubrimiento · Los títulos de ejemplo son ficticios</footer>
 <script>
 async function qvapayLogin(){
-  if(window.QvaPay&&QvaPay.auth){
-    try{await QvaPay.auth.requestLogin();alert('Login QvaPay OK');}
-    catch(e){alert(e.message||e);}
-  } else alert('Abre Cineva en la mini-app QvaPay o el simulador.');
+  if(window.QvaPay&&QvaPay.auth){try{await QvaPay.auth.requestLogin()}catch(e){alert(e.message||e)}}
+  else alert('Abre Cineva en la mini-app QvaPay');
 }
 </script>
-{% block scripts %}{% endblock %}
 </body>
 </html>
