@@ -1,36 +1,39 @@
 {% extends "base.html" %}
 {% block title %}{{ item.title|default:"Detalle" }}{% endblock %}
 {% block content %}
-<div class="wrap" style="padding-top:28px">
+<div class="wrap" style="padding-top:32px">
 {% if item.id %}
   <div class="detail">
-    <div>{% if item.poster %}<img class="poster" src="{{ item.poster }}" alt="">{% endif %}</div>
+    <div>{% if item.poster %}<img class="poster" src="{{ item.poster }}" alt="{{ item.title }}">{% endif %}</div>
     <div>
-      <h1 style="margin:0 0 8px;font-size:2rem">{{ item.title }} <span class="badge">{{ type|upper }}</span></h1>
+      <h1 style="margin:0 0 8px;font-size:clamp(1.8rem,4vw,2.4rem);letter-spacing:-.03em">{{ item.title }}</h1>
       <div class="meta-row">
-        {% if item.vote %}<span class="score">{{ item.vote|floatformat:1 }}/10</span>{% endif %}
+        {% if item.vote %}<span class="score">★ {{ item.vote|floatformat:1 }}</span>{% endif %}
         {% if item.year %}<span>{{ item.year }}</span>{% endif %}
         {% if item.runtime %}<span>{{ item.runtime }} min</span>{% endif %}
+        {% if item.seasons %}<span>{{ item.seasons }} temporadas</span>{% endif %}
+        {% if item.episodes %}<span>{{ item.episodes }} episodios</span>{% endif %}
         <span class="hd">HD</span>
       </div>
-      {% if item.genres %}<p style="color:var(--muted)">{{ item.genres|join:", " }}</p>{% endif %}
-      <p style="max-width:560px;color:#c5d0e6">{{ item.overview }}</p>
-      <p style="margin-top:18px">
-        <a class="btn btn-primary" href="/watch/{{ type }}/{{ item.id }}/">▶ Ver trailer</a>
-        <a class="btn btn-ghost" href="/">Inicio</a>
-      </p>
-      {% if item.trailers %}
-        {% with t=item.trailers.0 %}
-        <div class="player" style="margin-top:22px;max-width:640px">
-          <iframe src="https://www.youtube.com/embed/{{ t.key }}" allowfullscreen allow="accelerometer; encrypted-media; picture-in-picture"></iframe>
-        </div>
-        {% endwith %}
+      {% if item.genres %}
+      <div class="chips">{% for g in item.genres %}<span class="chip">{{ g }}</span>{% endfor %}</div>
       {% endif %}
-      {% if item.cast %}<p style="margin-top:18px;color:var(--muted);font-size:.9rem">Reparto: {% for c in item.cast %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+      {% if item.tagline %}<p style="color:var(--accent);font-weight:650;font-style:italic">{{ item.tagline }}</p>{% endif %}
+      <p style="max-width:580px;color:#c9d5ea;font-size:1.05rem">{{ item.overview }}</p>
+      <p style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px">
+        <a class="btn btn-primary" href="/watch/{{ type }}/{{ item.id }}/">▶ Reproducir vista</a>
+        <a class="btn btn-ghost" href="/">Volver al inicio</a>
+      </p>
+      {% if item.cast %}
+      <p style="margin-top:22px;color:var(--muted);font-size:.92rem">
+        <strong style="color:#fff">Reparto:</strong>
+        {% for c in item.cast %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+      </p>
+      {% endif %}
     </div>
   </div>
 {% else %}
-  <p class="warn">No se encontró el título.</p>
+  <p class="empty">No se encontró el título.</p>
 {% endif %}
 </div>
 {% endblock %}

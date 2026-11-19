@@ -2,16 +2,20 @@
 {% block title %}Búsqueda{% endblock %}
 {% block content %}
 <div class="wrap" style="padding-top:28px">
-  <div class="section-head"><h2>Resultados{% if query %}: “{{ query }}”{% endif %}</h2></div>
+  <div class="section-head">
+    <h2>{% if query %}Resultados para “{{ query }}”{% else %}Explorar catálogo{% endif %}</h2>
+  </div>
   <div class="grid">
     {% for r in results %}
     <a class="poster-card" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}" style="flex:initial">
       {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
+      {% if r.vote %}<span class="score-pill">{{ r.vote|floatformat:1 }}</span>{% endif %}
       {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
       <div class="cap">{{ r.title }}</div>
+      <div class="sub">{% if r.media_type == 'movie' %}Película{% else %}Serie{% endif %}</div>
     </a>
     {% empty %}
-    <p class="warn">{% if not tmdb_ok %}Falta TMDB_API_KEY.{% else %}Sin resultados.{% endif %}</p>
+    <p class="empty">Sin resultados{% if query %} para “{{ query }}”{% endif %}.</p>
     {% endfor %}
   </div>
 </div>

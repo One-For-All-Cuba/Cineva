@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="wrap" style="padding-top:28px">
+  <div class="section-head"><h2>{{ title }}</h2></div>
+  <div class="grid">
+    {% for r in items %}
+    <a class="poster-card" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}" style="flex:initial">
+      {% if r.year %}<span class="year">{{ r.year }}</span>{% endif %}
+      {% if r.vote %}<span class="score-pill">{{ r.vote|floatformat:1 }}</span>{% endif %}
+      {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">{% endif %}
+      <div class="cap">{{ r.title }}</div>
+      <div class="sub">{% if r.genres %}{{ r.genres.0 }}{% endif %}</div>
+    </a>
+    {% empty %}
+    <p class="empty">No hay títulos en esta sección.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

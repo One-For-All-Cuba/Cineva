@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Cineva{% endblock %} — Películas, Series y Anime</title>
+<meta name="description" content="Cineva: plataforma de descubrimiento de películas, series y anime.">
 <link rel="stylesheet" href="/static/cineva.css">
 <script src="https://www.qvapay.com/miniapps/sdk-sim.js"></script>
 {% block head %}{% endblock %}
 </head>
 <body>
-<div class="topbar">Cineva · puente de catálogo y trailers · metadata TMDB</div>
+<div class="topbar">Cineva · experiencia de catálogo profesional · modo demostración visual</div>
 <header class="site-header">
   <div class="header-inner">
     <a class="logo" href="/">
@@ -18,13 +19,13 @@
     </a>
     <nav class="main-nav">
       <a href="/" class="{% if request.path == '/' %}active{% endif %}">Inicio</a>
-      <a href="/search/?q=movie">Películas</a>
-      <a href="/search/?q=serie">Series</a>
-      <a href="/api/catalog/?kind=anime">Anime</a>
+      <a href="/peliculas/" class="{% if '/peliculas' in request.path %}active{% endif %}">Películas</a>
+      <a href="/series/" class="{% if '/series' in request.path %}active{% endif %}">Series</a>
+      <a href="/anime/" class="{% if '/anime' in request.path %}active{% endif %}">Anime</a>
     </nav>
     <div class="header-tools">
       <form class="search-pill" action="/search/" method="get">
-        <input type="search" name="q" placeholder="Buscar películas y series" value="{{ query|default:'' }}" required>
+        <input type="search" name="q" placeholder="Buscar títulos…" value="{{ query|default:'' }}">
         <button type="submit" aria-label="Buscar">⌕</button>
       </form>
       {% if user.is_authenticated %}
@@ -37,8 +38,14 @@
     </div>
   </div>
 </header>
+{% if catalog_source == 'demo' %}
+<div class="demo-banner"><span>Catálogo de demostración · títulos de ejemplo para diseño</span></div>
+{% endif %}
 {% block content %}{% endblock %}
-<footer class="footer">Cineva · No aloja video con copyright · Trailers y fichas vía TMDB/YouTube</footer>
+<footer class="footer">
+  <strong style="color:#fff">Cineva</strong> · Descubrimiento de contenido · v{{ version|default:"0.5" }}<br>
+  Los títulos de ejemplo son ficticios y solo ilustran la interfaz.
+</footer>
 <script>
 async function qvapayLogin(){
   if(window.QvaPay&&QvaPay.auth){
