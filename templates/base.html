@@ -2,45 +2,88 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{% block title %}Cineva{% endblock %} — Películas, Series y Anime</title>
 <link rel="stylesheet" href="/static/cineva.css">
 <script src="https://www.qvapay.com/miniapps/sdk-sim.js"></script>
 </head>
 <body>
-<div class="topbar">Cineva · catálogo de demostración visual · portadas y filtros activos</div>
-<header class="site-header">
-  <div class="header-inner">
-    <a class="logo" href="/"><span class="logo-mark">C</span> cine<em>va</em></a>
-    <nav class="main-nav">
+<div class="topbar">Cineva · catálogo profesional · v{{ version|default:"0.9" }}</div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="logo" href="/">
+      <span class="logo-mark">C</span>
+      <span>cine<em>va</em></span>
+    </a>
+    <nav class="side-nav">
       <a href="/" class="{% if request.path == '/' %}active{% endif %}">Inicio</a>
       <a href="/peliculas/" class="{% if '/peliculas' in request.path %}active{% endif %}">Películas</a>
       <a href="/series/" class="{% if '/series' in request.path %}active{% endif %}">Series</a>
       <a href="/anime/" class="{% if '/anime' in request.path %}active{% endif %}">Anime</a>
       <a href="/search/">Explorar</a>
-    </nav>
-    <div class="header-tools">
-      <form class="search-pill" action="/search/" method="get">
-        <input type="search" name="q" placeholder="Buscar películas y series" value="{{ query|default:'' }}">
-        <button type="submit" aria-label="Buscar">⌕</button>
-      </form>
+      <div class="side-sep"></div>
       {% if user.is_authenticated %}
-        <a class="btn btn-ghost" href="/accounts/logout/">Salir</a>
+        <div class="side-user">{{ user.username }}</div>
+        {% if user.is_staff %}
+        <a href="/panel/" class="{% if '/panel' in request.path %}active{% endif %}">⚙ Administrar sitio</a>
+        <a href="/admin/">Django Admin</a>
+        {% endif %}
+        <a href="/accounts/logout/">Salir</a>
       {% else %}
-        <a class="btn btn-ghost" href="/accounts/google/login/">Google</a>
-        <button type="button" class="btn btn-primary" onclick="qvapayLogin()">QvaPay</button>
+        <a href="/accounts/login/">Entrar</a>
+        <a href="/accounts/google/login/">Google</a>
+        <button type="button" class="side-btn" onclick="qvapayLogin()">QvaPay</button>
       {% endif %}
-    </div>
+    </nav>
+    <div class="side-foot">Cineva {{ version }}</div>
+  </aside>
+
+  <div class="main-col">
+    <header class="site-header">
+      <div class="header-inner">
+        <button type="button" class="menu-toggle" id="menuToggle" aria-label="Menú">☰</button>
+        <form class="search-pill" action="/search/" method="get">
+          <input type="search" name="q" placeholder="Buscar películas y series" value="{{ query|default:'' }}">
+          <button type="submit" aria-label="Buscar">⌕</button>
+        </form>
+        <div class="header-tools">
+          {% if user.is_authenticated %}
+            <span class="user-chip">{{ user.username }}</span>
+          {% else %}
+            <a class="btn btn-ghost" href="/accounts/google/login/">Google</a>
+            <a class="btn btn-primary" href="/accounts/login/">Entrar</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    {% if messages %}
+    <div class="flash-wrap">{% for message in messages %}<div class="flash">{{ message }}</div>{% endfor %}</div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <footer class="footer">Cineva · Interfaz profesional · Responsive PC / móvil</footer>
   </div>
-</header>
-{% if catalog_source == 'demo' %}<div class="demo-banner"><span>Modo demo · {{ version }}</span></div>{% endif %}
-{% block content %}{% endblock %}
-<footer class="footer">Cineva · Interfaz profesional de descubrimiento · Los títulos de ejemplo son ficticios</footer>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
 <script>
 async function qvapayLogin(){
   if(window.QvaPay&&QvaPay.auth){try{await QvaPay.auth.requestLogin()}catch(e){alert(e.message||e)}}
   else alert('Abre Cineva en la mini-app QvaPay');
 }
+(function(){
+  const sb=document.getElementById('sidebar');
+  const btn=document.getElementById('menuToggle');
+  const bd=document.getElementById('sidebarBackdrop');
+  function close(){sb.classList.remove('open');bd.classList.remove('show');document.body.classList.remove('nav-open')}
+  function open(){sb.classList.add('open');bd.classList.add('show');document.body.classList.add('nav-open')}
+  if(btn) btn.addEventListener('click',()=>{sb.classList.contains('open')?close():open()});
+  if(bd) bd.addEventListener('click',close);
+})();
 </script>
 </body>
 </html>

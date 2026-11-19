@@ -1,21 +1,26 @@
-"""Vistas Cineva — UI profesional estable."""
+"""Vistas Cineva — catálogo + panel de administración."""
 from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import logging
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from . import demo_catalog as demo
 from . import tmdb
+from .bootstrap import _ensure_google_socialapp
+from .models import ProviderPlugin
 
 log = logging.getLogger(__name__)
-VERSION = "0.8.0"
+VERSION = getattr(settings, "CINEVA_VERSION", "0.9.0")
 
 
 def _source() -> str:
@@ -201,10 +206,24 @@ def watch(request, media_type: str, tmdb_id: int):
         if remote and remote.get("id"):
             item = remote
     media_type = item.get("media_type") or media_type
+    embed = ""
+    try:
+        pl = ProviderPlugin.objects.filter(key="player_embed", enabled=True).first()
+        if pl and (pl.config or {}).get("embed_url"):
+            embed = (pl.config["embed_url"] or "").replace("{id}", str(tmdb_id))
+    except Exception:
+        pass
     return render(
         request,
         "watch.html",
-        {"item": item, "type": media_type, "user": request.user, "version": VERSION, "catalog_source": _source()},
+        {
+            "item": item,
+            "type": media_type,
+            "user": request.user,
+            "version": VERSION,
+            "catalog_source": _source(),
+            "embed_url": embed,
+        },
     )
 
 
@@ -237,6 +256,12 @@ def qvapay_login(request):
 @require_POST
 def qvapay_webhook(request):
     secret = getattr(settings, "QVAPAY_APP_SECRET", "") or ""
+    try:
+        pl = ProviderPlugin.objects.filter(key="qvapay", enabled=True).first()
+        if pl and (pl.config or {}).get("app_secret"):
+            secret = pl.config["app_secret"]
+    except Exception:
+        pass
     if not secret:
         return HttpResponse("qvapay not configured", status=503)
     signature = request.headers.get("x-qvapay-signature", "")
@@ -245,3 +270,59 @@ def qvapay_webhook(request):
     if not hmac.compare_digest(signature, expected):
         return HttpResponse(status=401)
     return HttpResponse("ok")
+
+
+def staff_required(view):
+    return login_required(user_passes_test(lambda u: u.is_staff)(view))
+
+
+@staff_required
+def panel_home(request):
+    plugins = list(ProviderPlugin.objects.all())
+    return render(
+        request,
+        "panel.html",
+        {
+            "plugins": plugins,
+            "version": VERSION,
+            "user": request.user,
+            "google_redirect": "https://oneforall.alwaysdata.net/accounts/google/login/callback/",
+        },
+    )
+
+
+@staff_required
+@require_http_methods(["GET", "POST"])
+def panel_plugin_edit(request, key: str):
+    plugin = get_object_or_404(ProviderPlugin, key=key)
+    if request.method == "POST":
+        plugin.enabled = request.POST.get("enabled") == "on"
+        plugin.name = request.POST.get("name") or plugin.name
+        plugin.description = request.POST.get("description") or plugin.description
+        raw = request.POST.get("config_json") or "{}"
+        try:
+            plugin.config = json.loads(raw)
+        except json.JSONDecodeError:
+            messages.error(request, "JSON de configuración inválido")
+            return redirect("panel_plugin", key=key)
+        plugin.save()
+        if plugin.key == "google" and plugin.enabled:
+            cfg = plugin.config or {}
+            if cfg.get("client_id") and cfg.get("client_secret"):
+                _ensure_google_socialapp(cfg["client_id"], cfg["client_secret"])
+                messages.success(request, "Google OAuth actualizado en SocialApp")
+        if plugin.key == "tmdb" and plugin.enabled:
+            messages.info(request, "TMDB: reinicia el proceso para aplicar TMDB_API_KEY de entorno si la usas")
+        messages.success(request, f"Plugin «{plugin.name}» guardado")
+        return redirect("panel_home")
+    return render(
+        request,
+        "panel_plugin.html",
+        {
+            "plugin": plugin,
+            "config_json": json.dumps(plugin.config or {}, indent=2, ensure_ascii=False),
+            "version": VERSION,
+            "user": request.user,
+            "google_redirect": "https://oneforall.alwaysdata.net/accounts/google/login/callback/",
+        },
+    )

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Administrar sitio{% endblock %}
+{% block content %}
+<div class="wrap panel-wrap">
+  <h1 class="page-title">Administrar sitio</h1>
+  <p class="count-line">Configura proveedores como plugins. Solo personal staff.</p>
+
+  <div class="panel-grid">
+    {% for p in plugins %}
+    <a class="plugin-card" href="/panel/plugin/{{ p.key }}/">
+      <div class="plugin-top">
+        <strong>{{ p.name }}</strong>
+        <span class="tag {% if p.enabled %}on{% else %}off{% endif %}">{% if p.enabled %}Activo{% else %}Inactivo{% endif %}</span>
+      </div>
+      <div class="plugin-kind">{{ p.get_kind_display }} · <code>{{ p.key }}</code></div>
+      <p>{{ p.description|truncatewords:24 }}</p>
+    </a>
+    {% empty %}
+    <p class="empty">No hay plugins. Ejecuta migraciones.</p>
+    {% endfor %}
+  </div>
+
+  <div class="note" style="margin-top:24px">
+    <strong style="color:#fff">Google OAuth</strong><br>
+    URI de redirección autorizada en Google Cloud Console:<br>
+    <code>{{ google_redirect }}</code><br>
+    Usuario admin por defecto: <code>admin</code> / <code>admin</code>
+  </div>
+</div>
+{% endblock %}

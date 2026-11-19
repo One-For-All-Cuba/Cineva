@@ -21,6 +21,8 @@ urlpatterns = [
     path("qvapay/login/", views.qvapay_login, name="qvapay_login"),
     path("qvapay/webhook/", views.qvapay_webhook, name="qvapay_webhook"),
     path("api/catalog/", views.api_catalog, name="api_catalog"),
+    path("panel/", views.panel_home, name="panel_home"),
+    path("panel/plugin/<slug:key>/", views.panel_plugin_edit, name="panel_plugin"),
     path("static/<path:path>", serve, {"document_root": settings.BASE_DIR / "static"}),
 ]
 
