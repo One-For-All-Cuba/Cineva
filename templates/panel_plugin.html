@@ -1,16 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Plugin {{ plugin.name }}{% endblock %}
+{% block title %}Proveedor {{ plugin.name }}{% endblock %}
 {% block content %}
 <div class="wrap panel-wrap">
-  <p><a href="/panel/" style="color:var(--muted)">← Volver al panel</a></p>
+  <p><a href="/panel/" style="color:var(--muted)">← Panel</a></p>
   <h1 class="page-title">{{ plugin.name }}</h1>
-  <p class="count-line">{{ plugin.get_kind_display }} · <code>{{ plugin.key }}</code></p>
-
   <form method="post" class="plugin-form">
     {% csrf_token %}
     <label class="check-row">
       <input type="checkbox" name="enabled" {% if plugin.enabled %}checked{% endif %}>
-      Activar plugin
+      Activar proveedor
     </label>
     <label>Nombre
       <input type="text" name="name" value="{{ plugin.name }}">
@@ -18,21 +16,12 @@
     <label>Descripción
       <textarea name="description" rows="2">{{ plugin.description }}</textarea>
     </label>
-    <label>Configuración (JSON)
-      <textarea name="config_json" rows="12" class="mono">{{ config_json }}</textarea>
+    <label>URL embed (usa {id} y opcional {type})
+      <input type="text" name="embed_url" value="{{ plugin.embed_url }}" placeholder="https://…/{id}">
     </label>
-    {% if plugin.key == 'google' %}
-    <div class="note">
-      Claves esperadas: <code>client_id</code>, <code>client_secret</code>.<br>
-      Redirect URI: <code>{{ google_redirect }}</code>
-    </div>
-    {% endif %}
-    {% if plugin.key == 'tmdb' %}
-    <div class="note">Clave esperada: <code>api_key</code></div>
-    {% endif %}
-    {% if plugin.key == 'player_embed' %}
-    <div class="note">Clave: <code>embed_url</code> con <code>{id}</code> como marcador</div>
-    {% endif %}
+    <label>Prioridad (menor = primero)
+      <input type="text" name="priority" value="{{ plugin.priority }}">
+    </label>
     <button type="submit" class="btn btn-primary">Guardar</button>
   </form>
 </div>

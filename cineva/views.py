@@ -1,9 +1,8 @@
-"""Vistas Cineva — catálogo + panel de administración."""
+"""Vistas Cineva."""
 from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import logging
 
 from django.conf import settings
@@ -17,10 +16,10 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from . import demo_catalog as demo
 from . import tmdb
 from .bootstrap import _ensure_google_socialapp
-from .models import ProviderPlugin
+from .models import ProviderPlugin, SiteConfig
 
 log = logging.getLogger(__name__)
-VERSION = getattr(settings, "CINEVA_VERSION", "0.9.0")
+VERSION = getattr(settings, "CINEVA_VERSION", "0.9.1")
 
 
 def _source() -> str:
@@ -70,7 +69,6 @@ def home(request):
         request,
         "home.html",
         {
-            "user": request.user,
             "hero": hero,
             "trending": trending[:16],
             "movies": movies,
@@ -84,7 +82,7 @@ def home(request):
     )
 
 
-def _list_page(request, title: str, items: list[dict], kind: str):
+def _list_page(request, title: str, items: list, kind: str):
     f = _filters_from_request(request)
     filtered = demo.filter_catalog(
         items, genre=f["genre"], year=f["year"], letter=f["letter"], orden=f["orden"]
@@ -96,7 +94,6 @@ def _list_page(request, title: str, items: list[dict], kind: str):
             "title": title,
             "items": filtered,
             "all_count": len(items),
-            "user": request.user,
             "kind": kind,
             "genres": demo.genres_for(items),
             "years": demo.years_for(items),
@@ -146,7 +143,6 @@ def search(request):
             "items": results,
             "all_count": len(results),
             "query": query,
-            "user": request.user,
             "kind": "all",
             "genres": demo.genres_for(demo.all_items()),
             "years": demo.years_for(demo.all_items()),
@@ -170,7 +166,6 @@ def movie_detail(request, tmdb_id: int):
         {
             "item": item,
             "type": item.get("media_type") or "movie",
-            "user": request.user,
             "related": [x for x in demo.movies() if x["id"] != tmdb_id][:8],
             "catalog_source": _source(),
             "version": VERSION,
@@ -190,7 +185,6 @@ def tv_detail(request, tmdb_id: int):
         {
             "item": item,
             "type": item.get("media_type") or "tv",
-            "user": request.user,
             "related": [x for x in pool if x["id"] != tmdb_id][:8],
             "catalog_source": _source(),
             "version": VERSION,
@@ -208,9 +202,10 @@ def watch(request, media_type: str, tmdb_id: int):
     media_type = item.get("media_type") or media_type
     embed = ""
     try:
-        pl = ProviderPlugin.objects.filter(key="player_embed", enabled=True).first()
-        if pl and (pl.config or {}).get("embed_url"):
-            embed = (pl.config["embed_url"] or "").replace("{id}", str(tmdb_id))
+        for pl in ProviderPlugin.objects.filter(enabled=True).order_by("priority"):
+            if pl.embed_url:
+                embed = pl.embed_url.replace("{id}", str(tmdb_id)).replace("{type}", media_type)
+                break
     except Exception:
         pass
     return render(
@@ -219,7 +214,6 @@ def watch(request, media_type: str, tmdb_id: int):
         {
             "item": item,
             "type": media_type,
-            "user": request.user,
             "version": VERSION,
             "catalog_source": _source(),
             "embed_url": embed,
@@ -257,9 +251,9 @@ def qvapay_login(request):
 def qvapay_webhook(request):
     secret = getattr(settings, "QVAPAY_APP_SECRET", "") or ""
     try:
-        pl = ProviderPlugin.objects.filter(key="qvapay", enabled=True).first()
-        if pl and (pl.config or {}).get("app_secret"):
-            secret = pl.config["app_secret"]
+        cfg = SiteConfig.get()
+        if cfg.qvapay_app_secret:
+            secret = cfg.qvapay_app_secret
     except Exception:
         pass
     if not secret:
@@ -277,15 +271,31 @@ def staff_required(view):
 
 
 @staff_required
+@require_http_methods(["GET", "POST"])
 def panel_home(request):
-    plugins = list(ProviderPlugin.objects.all())
+    cfg = SiteConfig.get()
+    if request.method == "POST":
+        section = request.POST.get("section")
+        if section == "config":
+            cfg.site_title = request.POST.get("site_title") or cfg.site_title
+            cfg.tmdb_api_key = request.POST.get("tmdb_api_key", "").strip()
+            cfg.google_client_id = request.POST.get("google_client_id", "").strip()
+            cfg.google_client_secret = request.POST.get("google_client_secret", "").strip()
+            cfg.qvapay_app_id = request.POST.get("qvapay_app_id", "").strip()
+            cfg.qvapay_app_secret = request.POST.get("qvapay_app_secret", "").strip()
+            cfg.save()
+            if cfg.google_client_id and cfg.google_client_secret:
+                _ensure_google_socialapp(cfg.google_client_id, cfg.google_client_secret)
+            messages.success(request, "Configuración guardada")
+            return redirect("panel_home")
+    providers = list(ProviderPlugin.objects.all())
     return render(
         request,
         "panel.html",
         {
-            "plugins": plugins,
+            "cfg": cfg,
+            "providers": providers,
             "version": VERSION,
-            "user": request.user,
             "google_redirect": "https://oneforall.alwaysdata.net/accounts/google/login/callback/",
         },
     )
@@ -298,31 +308,17 @@ def panel_plugin_edit(request, key: str):
     if request.method == "POST":
         plugin.enabled = request.POST.get("enabled") == "on"
         plugin.name = request.POST.get("name") or plugin.name
-        plugin.description = request.POST.get("description") or plugin.description
-        raw = request.POST.get("config_json") or "{}"
+        plugin.description = request.POST.get("description") or ""
+        plugin.embed_url = request.POST.get("embed_url") or ""
         try:
-            plugin.config = json.loads(raw)
-        except json.JSONDecodeError:
-            messages.error(request, "JSON de configuración inválido")
-            return redirect("panel_plugin", key=key)
+            plugin.priority = int(request.POST.get("priority") or plugin.priority)
+        except ValueError:
+            pass
         plugin.save()
-        if plugin.key == "google" and plugin.enabled:
-            cfg = plugin.config or {}
-            if cfg.get("client_id") and cfg.get("client_secret"):
-                _ensure_google_socialapp(cfg["client_id"], cfg["client_secret"])
-                messages.success(request, "Google OAuth actualizado en SocialApp")
-        if plugin.key == "tmdb" and plugin.enabled:
-            messages.info(request, "TMDB: reinicia el proceso para aplicar TMDB_API_KEY de entorno si la usas")
-        messages.success(request, f"Plugin «{plugin.name}» guardado")
+        messages.success(request, f"Proveedor «{plugin.name}» guardado")
         return redirect("panel_home")
     return render(
         request,
         "panel_plugin.html",
-        {
-            "plugin": plugin,
-            "config_json": json.dumps(plugin.config or {}, indent=2, ensure_ascii=False),
-            "version": VERSION,
-            "user": request.user,
-            "google_redirect": "https://oneforall.alwaysdata.net/accounts/google/login/callback/",
-        },
+        {"plugin": plugin, "version": VERSION},
     )

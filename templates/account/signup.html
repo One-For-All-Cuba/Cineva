@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Registrarse{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Crear cuenta</h1>
+    <p class="auth-sub">Regístrate para guardar tu lista y entrar más rápido</p>
+    {% if form.errors %}
+    <div class="flash">Revisa los datos del formulario</div>
+    {% endif %}
+    <form method="post" action="{{ app_path }}" class="auth-form">
+      {% csrf_token %}
+      <label>Usuario
+        <input type="text" name="username" required autocomplete="username" value="{{ form.username.value|default:'' }}">
+      </label>
+      <label>Correo
+        <input type="email" name="email" required autocomplete="email" value="{{ form.email.value|default:'' }}">
+      </label>
+      <label>Contraseña
+        <input type="password" name="password1" required autocomplete="new-password">
+      </label>
+      <label>Repetir contraseña
+        <input type="password" name="password2" required autocomplete="new-password">
+      </label>
+      {% if redirect_field_value %}
+      <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+      <button type="submit" class="btn btn-primary btn-block">Registrarse</button>
+    </form>
+    <div class="auth-divider"><span>o</span></div>
+    <a class="btn btn-ghost btn-block" href="/accounts/google/login/">Continuar con Google</a>
+    <p class="auth-links"><a href="/accounts/login/">¿Ya tienes cuenta? Entrar</a></p>
+  </div>
+</div>
+{% endblock %}

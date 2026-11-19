@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Salir{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Cerrar sesión</h1>
+    <p class="auth-sub">¿Seguro que quieres salir?</p>
+    <form method="post" action="{{ app_path }}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-block">Salir</button>
+    </form>
+    <p class="auth-links"><a href="/">Cancelar</a></p>
+  </div>
+</div>
+{% endblock %}
