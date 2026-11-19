@@ -1,5 +1,8 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.static import serve
 
 from . import views
 
@@ -15,4 +18,9 @@ urlpatterns = [
     path("qvapay/login/", views.qvapay_login, name="qvapay_login"),
     path("qvapay/webhook/", views.qvapay_webhook, name="qvapay_webhook"),
     path("api/catalog/", views.api_catalog, name="api_catalog"),
+    # CSS/JS en producción sin collectstatic estricto
+    path("static/<path:path>", serve, {"document_root": settings.BASE_DIR / "static"}),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.BASE_DIR / "static")

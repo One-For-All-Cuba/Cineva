@@ -62,8 +62,9 @@ LANGUAGE_CODE = "es"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CSRF_TRUSTED_ORIGINS = ["https://oneforall.alwaysdata.net", "http://oneforall.alwaysdata.net"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -87,9 +88,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# QvaPay
 QVAPAY_APP_ID = os.environ.get("QVAPAY_APP_ID", "")
 QVAPAY_APP_SECRET = os.environ.get("QVAPAY_APP_SECRET", "")
-
-# TMDB for metadata (legal)
 TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
