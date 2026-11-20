@@ -11,13 +11,13 @@
 | GET | `/search/?q=` | Búsqueda (+ mismos filtros) |
 | GET | `/movie/<id>/` | Ficha película |
 | GET | `/tv/<id>/` | Ficha serie/anime |
-| GET | `/watch/<type>/<id>/` | Vista reproductor (placeholder) |
-| GET | `/health/` | JSON estado (version, catalog, tmdb) |
+| GET | `/watch/<type>/<id>/` | Vista reproductor: selector de proveedor (`?provider=key`), embed de servidores externos, botón descargar si hay download_url |
+| GET | `/health/` | JSON estado (version, catalog, items) |
 | GET | `/api/catalog/?kind=&q=&genero=&ano=&orden=` | API JSON del catálogo |
 | GET | `/accounts/google/login/` | OAuth Google (allauth) |
 | GET | `/qvapay/login/` | Hint SDK mini-app QvaPay |
 | POST | `/qvapay/webhook/` | Webhook QvaPay (HMAC) |
-| GET | `/static/cineva.css` | Estilos |
+| GET | `/static/cineva.css` | Estilos (incluye type-badge en portadas) |
 
 ### Query params de filtros
 - `genero` / `genre`
@@ -25,18 +25,21 @@
 - `letra` / `letter` (A–Z)
 - `orden`: `rating` \| `year` \| `az` \| `za`
 
+### Query en watch
+- `provider`: key del ProviderPlugin para cambiar el embed/descarga.
+
 ## Externos (preparados, no obligatorios en demo)
 
 | API | Uso |
 |-----|-----|
-| TMDB | Metadata y portadas reales si `TMDB_API_KEY` |
+| Proveedores custom | Catálogo JSON + embed_url / download_url / trailer_url configurables en panel |
 | Google OAuth | Login vía django-allauth |
 | QvaPay mini-app SDK | `QvaPay.auth.requestLogin()` |
 | QvaPay webhook | Firma `x-qvapay-signature` HMAC-SHA256 |
 
 ## Despliegue Alwaysdata
-- Código: `~/apps/Cineva` (+ sync `1gb` vía rclone cuando aplique)
-- Gunicorn: `127.0.0.1:8000`
-- Caddy servicio: `[fd00::4:84e]:8300` → proxy a `:8000`
-- Dominio: Apache → `services-oneforall.alwaysdata.net:8300`
-- Arranque: `~/bin/start-cineva-public.sh`
+- Código: `~/apps/Cineva` o `/home/oneforall/mnt/1gb/Cineva` (udocker namespace)
+- Gunicorn: `127.0.0.1:8000` o 0.0.0.0:8000
+- Caddy servicio: proxy
+- Dominio: oneforall.alwaysdata.net
+- Arranque: scripts en bin/ y start.sh (ejecuta migrate)

@@ -3,6 +3,21 @@
 {% block content %}
 <div class="wrap">
   <h1 class="page-title">{{ item.title|default:"Reproducir" }}</h1>
+
+  {% if providers %}
+  <div class="provider-select">
+    <label for="prov-sel">Proveedor:</label>
+    <select id="prov-sel" onchange="if(this.value) location.href='?provider='+encodeURIComponent(this.value)">
+      {% for p in providers %}
+      <option value="{{ p.key }}" {% if selected_provider and selected_provider.key == p.key %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+    {% if download_url %}
+    <a class="btn btn-ghost" href="{{ download_url }}" target="_blank" rel="noopener">↓ Descargar</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="player">
     {% if embed_url %}
       <iframe src="{{ embed_url }}" allowfullscreen allow="autoplay; encrypted-media" title="player"></iframe>
@@ -12,11 +27,11 @@
     {% else %}
       <div>
         <p>No hay proveedor de reproducción activo con embed.</p>
-        <p style="font-size:.85rem;margin-top:8px">Configura <code>embed_url</code> o <code>trailer_url</code> en un proveedor del panel.</p>
+        <p style="font-size:.85rem;margin-top:8px">Configura <code>embed_url</code> o <code>download_url</code> en un proveedor del panel.</p>
       </div>
     {% endif %}
   </div>
-  <p class="count-line" style="margin-top:12px">Fuente catálogo: {{ catalog_source }}</p>
+  <p class="count-line" style="margin-top:12px">Fuente catálogo: {{ catalog_source }}{% if selected_provider %} · Proveedor: {{ selected_provider.name }}{% endif %}</p>
   <a class="btn btn-ghost" href="{% if type == 'movie' %}/movie/{{ item.id }}/{% else %}/tv/{{ item.id }}/{% endif %}">Volver a la ficha</a>
 </div>
 {% endblock %}

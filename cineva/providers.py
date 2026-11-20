@@ -30,6 +30,14 @@ def active_player_provider() -> ProviderPlugin | None:
     )
 
 
+def player_providers() -> list[ProviderPlugin]:
+    return list(
+        ProviderPlugin.objects.filter(enabled=True)
+        .exclude(embed_url="")
+        .order_by("priority")
+    )
+
+
 def _normalize_item(raw: dict, default_type: str = "movie") -> dict:
     mt = raw.get("media_type") or raw.get("type") or default_type
     title = raw.get("title") or raw.get("name") or "Sin título"
@@ -51,6 +59,7 @@ def _normalize_item(raw: dict, default_type: str = "movie") -> dict:
         "trailer_key": raw.get("trailer_key") or raw.get("youtube") or "",
         "slug": raw.get("slug") or str(raw.get("id") or ""),
         "stream_id": raw.get("stream_id") or raw.get("id"),
+        "download_url": raw.get("download_url") or raw.get("download") or "",
     }
 
 
@@ -59,7 +68,7 @@ def fetch_catalog(provider: ProviderPlugin) -> dict[str, list[dict]]:
     if not url:
         return {}
     try:
-        r = requests.get(url, timeout=12, headers={"User-Agent": "Cineva/0.9"})
+        r = requests.get(url, timeout=12, headers={"User-Agent": "Cineva/0.10"})
         if not r.ok:
             log.warning("Catalog provider %s -> %s", provider.key, r.status_code)
             return {}
@@ -115,15 +124,32 @@ def by_id(item_id) -> dict | None:
         return None
 
 
-def embed_for(item: dict, media_type: str) -> str:
-    pl = active_player_provider()
-    if not pl or not pl.embed_url:
+def _apply_template(template: str, item: dict, media_type: str) -> str:
+    if not template:
         return ""
     return (
-        pl.embed_url.replace("{id}", str(item.get("stream_id") or item.get("id") or ""))
+        template.replace("{id}", str(item.get("stream_id") or item.get("id") or ""))
         .replace("{type}", media_type)
         .replace("{slug}", str(item.get("slug") or ""))
+        .replace("{title}", str(item.get("title") or ""))
     )
+
+
+def embed_for(item: dict, media_type: str, provider: ProviderPlugin | None = None) -> str:
+    pl = provider or active_player_provider()
+    if not pl or not pl.embed_url:
+        return ""
+    return _apply_template(pl.embed_url, item, media_type)
+
+
+def download_for(item: dict, media_type: str, provider: ProviderPlugin | None = None) -> str:
+    # Prioridad: download_url del item, luego plantilla del proveedor
+    if item.get("download_url"):
+        return item["download_url"]
+    pl = provider or active_player_provider()
+    if not pl or not pl.download_url:
+        return ""
+    return _apply_template(pl.download_url, item, media_type)
 
 
 def trailer_for(item: dict) -> str:

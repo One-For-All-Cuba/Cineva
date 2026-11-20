@@ -4,7 +4,10 @@
 <div class="wrap" style="padding-top:28px">
 {% if item.id %}
   <div class="detail">
-    <div><img class="poster" src="{{ item.poster }}" alt="{{ item.title }}"></div>
+    <div style="position:relative">
+      <img class="poster" src="{{ item.poster }}" alt="{{ item.title }}">
+      {% if item.is_anime %}<span class="type-badge" style="position:absolute;left:8px;top:8px">Animado</span>{% elif item.media_type == 'tv' %}<span class="type-badge" style="position:absolute;left:8px;top:8px">Serie</span>{% else %}<span class="type-badge" style="position:absolute;left:8px;top:8px">Película</span>{% endif %}
+    </div>
     <div>
       <h1 style="margin:0 0 8px;font-size:clamp(1.7rem,4vw,2.3rem)">{{ item.title }}</h1>
       <div class="meta-row">
@@ -29,7 +32,7 @@
   <div class="rail">
     {% for r in related %}
     <a class="poster-card rail-item" href="{% if r.media_type == 'movie' %}/movie/{{ r.id }}/{% else %}/tv/{{ r.id }}/{% endif %}">
-      <div class="thumb"><img src="{{ r.poster }}" alt="" loading="lazy">{% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}</div>
+      <div class="thumb"><img src="{{ r.poster }}" alt="" loading="lazy">{% if r.is_anime %}<span class="type-badge">Animado</span>{% elif r.media_type == 'tv' %}<span class="type-badge">Serie</span>{% else %}<span class="type-badge">Película</span>{% endif %}{% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}</div>
       <div class="cap">{{ r.title }}</div>
     </a>
     {% endfor %}

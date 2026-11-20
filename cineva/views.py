@@ -19,7 +19,7 @@ from .bootstrap import _ensure_google_socialapp
 from .models import ProviderPlugin, SiteConfig
 
 log = logging.getLogger(__name__)
-VERSION = getattr(settings, "CINEVA_VERSION", "0.9.2")
+VERSION = getattr(settings, "CINEVA_VERSION", "0.10.1")
 
 
 def _filters_from_request(request):
@@ -184,7 +184,13 @@ def tv_detail(request, tmdb_id: int):
 def watch(request, media_type: str, tmdb_id: int):
     item = prov.by_id(tmdb_id) or {}
     media_type = item.get("media_type") or media_type
-    embed = prov.embed_for(item, media_type)
+    providers = prov.player_providers()
+    sel_key = (request.GET.get("provider") or "").strip()
+    selected = next((p for p in providers if p.key == sel_key), None)
+    if not selected and providers:
+        selected = providers[0]
+    embed = prov.embed_for(item, media_type, selected)
+    download = prov.download_for(item, media_type, selected)
     trailer = prov.trailer_for(item)
     return render(
         request,
@@ -195,7 +201,10 @@ def watch(request, media_type: str, tmdb_id: int):
             "version": VERSION,
             "catalog_source": prov.catalog_bundle().get("source"),
             "embed_url": embed,
+            "download_url": download,
             "trailer_url": trailer,
+            "providers": providers,
+            "selected_provider": selected,
         },
     )
 
@@ -283,6 +292,7 @@ def panel_plugin_edit(request, key: str):
         plugin.catalog_url = request.POST.get("catalog_url") or ""
         plugin.embed_url = request.POST.get("embed_url") or ""
         plugin.trailer_url = request.POST.get("trailer_url") or ""
+        plugin.download_url = request.POST.get("download_url") or ""
         try:
             plugin.priority = int(request.POST.get("priority") or plugin.priority)
         except ValueError:

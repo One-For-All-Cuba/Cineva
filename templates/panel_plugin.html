@@ -29,12 +29,16 @@
       <label>URL tráiler ({trailer_key})
         <input type="text" name="trailer_url" value="{{ plugin.trailer_url }}" placeholder="https://www.youtube.com/embed/{trailer_key}">
       </label>
+      <label>URL descarga ({id} {type} {slug}) — servidores externos
+        <input type="text" name="download_url" value="{{ plugin.download_url }}" placeholder="https://servidor.externo/dl/{id}.mp4">
+      </label>
       <label>Prioridad (menor = primero)
         <input type="number" name="priority" value="{{ plugin.priority }}">
       </label>
       <div class="note">
         Formato catálogo esperado:<br>
-        <code>{"movies":[{"id":1,"title":"…","poster":"…","year":"2024","overview":"…"}], "series":[], "anime":[], "trending":[]}</code>
+        <code>{"movies":[{"id":1,"title":"…","poster":"…","year":"2024","overview":"…","download_url":"https://…"}], "series":[], "anime":[], "trending":[]}</code><br>
+        En ver películas se puede cambiar de proveedor y descargar si hay URL.
       </div>
       <button type="submit" class="btn btn-primary">Guardar proveedor</button>
     </form>

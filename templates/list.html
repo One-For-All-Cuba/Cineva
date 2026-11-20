@@ -45,6 +45,7 @@
           <div class="thumb">
             <img src="{{ r.poster }}" alt="{{ r.title }}" loading="lazy">
             <div class="play"><span>▶</span></div>
+            {% if r.is_anime %}<span class="type-badge">Animado</span>{% elif r.media_type == 'tv' %}<span class="type-badge">Serie</span>{% else %}<span class="type-badge">Película</span>{% endif %}
             {% if r.year %}<span class="year-badge">{{ r.year }}</span>{% endif %}
           </div>
           <div class="cap">{{ r.title }}</div>

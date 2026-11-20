@@ -43,6 +43,11 @@ class ProviderPlugin(models.Model):
         blank=True,
         help_text="Plantilla tráiler, p.ej. https://www.youtube.com/embed/{trailer_key}",
     )
+    download_url = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Plantilla descarga, p.ej. https://servidor.externo/{id}.mp4 o con {type} {slug}",
+    )
     priority = models.PositiveIntegerField(default=100)
     config = models.JSONField(default=dict, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
