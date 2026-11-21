@@ -19,7 +19,7 @@ from .bootstrap import _ensure_google_socialapp
 from .models import ProviderPlugin, SiteConfig
 
 log = logging.getLogger(__name__)
-VERSION = getattr(settings, "CINEVA_VERSION", "0.10.1")
+VERSION = getattr(settings, "CINEVA_VERSION", "0.10.2")
 
 
 def _filters_from_request(request):
