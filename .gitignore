@@ -1,6 +1,37 @@
-*.pyc
+# Python
 __pycache__/
-db.sqlite3
+*.py[cod]
+*$py.class
+*.so
+.Python
 venv/
-.env
+.venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Django / Cineva
+db.sqlite3
+db.sqlite3-journal
 *.log
+.env
+.env.*
+local_settings.py
+staticfiles/
+media/uploads/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Secrets / runtime
+*.pem
+*.key
+caddy-run/
+
+# Cache / datos locales
+data/
+packages/
