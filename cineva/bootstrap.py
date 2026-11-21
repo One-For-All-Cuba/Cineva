@@ -6,20 +6,67 @@ import os
 
 log = logging.getLogger(__name__)
 
+# Servidores alternativos basados en análisis de cuevana3t.pro y mirrors comunes.
+# Plantillas usan {id} (TMDB o stream_id) y {type} (movie|tv).
 DEFAULT_PROVIDERS = [
+    {
+        "key": "vidlink",
+        "name": "VidLink",
+        "description": "Embed multilenguaje (vidlink.pro). Buena cobertura de películas/series.",
+        "enabled": True,
+        "catalog_url": "",
+        "embed_url": "https://vidlink.pro/{type}/{id}?sub_label=Spanish&player=jw&autoplay=true",
+        "trailer_url": "https://www.youtube.com/embed/{trailer_key}",
+        "download_url": "",
+        "priority": 10,
+    },
+    {
+        "key": "vsembed",
+        "name": "VSEmbed",
+        "description": "Embed Latino/Castellano (vsembed.ru).",
+        "enabled": True,
+        "catalog_url": "",
+        "embed_url": "https://vsembed.ru/embed/{type}?tmdb={id}&ds_lang=es",
+        "trailer_url": "",
+        "download_url": "",
+        "priority": 20,
+    },
+    {
+        "key": "vidapi",
+        "name": "VidAPI",
+        "description": "Player alternativo (vidapi.xyz).",
+        "enabled": True,
+        "catalog_url": "",
+        "embed_url": "https://vidapi.xyz/embed/{type}/{id}",
+        "trailer_url": "",
+        "download_url": "",
+        "priority": 30,
+    },
+    {
+        "key": "videasy",
+        "name": "Videasy",
+        "description": "Player.videasy.net — otro mirror de embeds.",
+        "enabled": True,
+        "catalog_url": "",
+        "embed_url": "https://player.videasy.net/{type}/{id}",
+        "trailer_url": "",
+        "download_url": "",
+        "priority": 40,
+    },
     {
         "key": "custom_json",
         "name": "API JSON propia",
         "description": (
             "Catálogo desde tu endpoint HTTPS. "
             "JSON: {movies:[], series:[], anime:[], trending:[]}. "
-            "Cada ítem: id, title, poster, overview, year, media_type, trailer_key opcional."
+            "Cada ítem: id, title, poster, overview, year, media_type, trailer_key, download_url opcional."
         ),
         "enabled": False,
         "catalog_url": "",
         "embed_url": "",
         "trailer_url": "https://www.youtube.com/embed/{trailer_key}",
-        "priority": 10,
+        "download_url": "",
+        "priority": 5,
     },
     {
         "key": "youtube_trailer",
@@ -29,7 +76,8 @@ DEFAULT_PROVIDERS = [
         "catalog_url": "",
         "embed_url": "",
         "trailer_url": "https://www.youtube.com/embed/{trailer_key}",
-        "priority": 50,
+        "download_url": "",
+        "priority": 90,
     },
 ]
 
@@ -82,21 +130,36 @@ def ensure_defaults() -> None:
         _ensure_google_socialapp(cfg.google_client_id, cfg.google_client_secret)
 
     for p in DEFAULT_PROVIDERS:
-        obj, created = ProviderPlugin.objects.get_or_create(
-            key=p["key"],
-            defaults={
-                "name": p["name"],
-                "description": p["description"],
-                "enabled": p["enabled"],
-                "catalog_url": p.get("catalog_url") or "",
-                "embed_url": p.get("embed_url") or "",
-                "trailer_url": p.get("trailer_url") or "",
-                "priority": p["priority"],
-            },
-        )
-        if not created and p["key"] == "youtube_trailer" and not obj.trailer_url:
-            obj.trailer_url = p["trailer_url"]
-            obj.save(update_fields=["trailer_url"])
+        defaults = {
+            "name": p["name"],
+            "description": p["description"],
+            "enabled": p["enabled"],
+            "catalog_url": p.get("catalog_url") or "",
+            "embed_url": p.get("embed_url") or "",
+            "trailer_url": p.get("trailer_url") or "",
+            "download_url": p.get("download_url") or "",
+            "priority": p["priority"],
+        }
+        obj, created = ProviderPlugin.objects.get_or_create(key=p["key"], defaults=defaults)
+        if not created:
+            update_fields = []
+            if p.get("embed_url") and not obj.embed_url:
+                obj.embed_url = p["embed_url"]
+                update_fields.append("embed_url")
+            if p.get("download_url") and not obj.download_url:
+                obj.download_url = p["download_url"]
+                update_fields.append("download_url")
+            if p.get("trailer_url") and not obj.trailer_url:
+                obj.trailer_url = p["trailer_url"]
+                update_fields.append("trailer_url")
+            if p["key"] in ("vidlink", "vsembed", "vidapi", "videasy") and not obj.enabled:
+                if obj.priority == 100 and not obj.embed_url:
+                    obj.enabled = True
+                    obj.priority = p["priority"]
+                    obj.embed_url = p.get("embed_url") or ""
+                    update_fields.extend(["enabled", "priority", "embed_url"])
+            if update_fields:
+                obj.save(update_fields=list(set(update_fields)))
 
 
 def _ensure_google_socialapp(client_id: str, client_secret: str) -> None:
